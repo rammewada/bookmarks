@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "Bookmark Organizer",
+  "version": "1.0.0",
+  "description": "Beautifully organize, view, and share your bookmarks with rich metadata previews.",
+  "permissions": [
+    "bookmarks",
+    "storage",
+    "tabs",
+    "favicon"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Bookmark Organizer",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["newtab.html", "icons/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
