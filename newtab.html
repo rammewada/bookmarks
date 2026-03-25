@@ -452,40 +452,98 @@
         color: var(--green);
       }
 
-      /* List View Styles (Row based, No images) */
+      /* List View (Sleek Bar UI) */
       #content.list .card {
         flex-direction: row;
         align-items: center;
-        height: 64px;
+        height: 52px;
+        padding: 0 16px;
+        gap: 16px;
+        border-radius: 12px;
+        background: var(--card-bg);
+      }
+      #content.list .card:hover {
+        background: var(--surface-sub);
       }
       #content.list .card .visual {
+        width: 32px;
+        height: 32px;
+        background: transparent;
+        flex-shrink: 0;
+      }
+      #content.list .card .visual img.lazy-thumb {
         display: none;
       }
+      #content.list .card .favicon-overlay {
+        position: static;
+        width: 32px;
+        height: 32px;
+        box-shadow: none;
+        background: var(--surface-sub);
+        border-radius: 6px;
+      }
       #content.list .card .details {
-        padding: 0 16px;
-        flex-direction: row;
+        padding: 0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .c-title-row {
+        display: flex;
+        justify-content: space-between;
         align-items: center;
-        gap: 16px;
+        gap: 20px;
+        width: 100%;
       }
       #content.list .card .c-title {
-        flex: 1;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--ink);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
+      #content.list .card .c-meta {
+        margin: 0;
+        opacity: 0.4;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      #content.list .card .c-tags-wrap,
+      #content.list .card .c-notes {
+        display: none;
+      }
       #content.list .card .card-actions {
         position: static;
+        opacity: 0.6; /* Increased default visibility */
+        display: flex;
+        gap: 6px;
+        transition: opacity 0.2s;
+        flex-shrink: 0;
+        color: var(--ink-dim);
+      }
+      #content.list .card:hover .card-actions {
         opacity: 1;
-        padding-right: 16px;
-        background: transparent;
-        box-shadow: none;
+        color: var(--ink);
       }
       #content.list .card .action-circle {
-        background: var(--surface-sub);
+        background: transparent;
         box-shadow: none;
         width: 28px;
         height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: inherit;
       }
+      #content.list .card .action-circle:hover {
+          color: var(--brand);
+          background: var(--surface-thick);
+          border-radius: 6px;
+      }
+      #content.grid .c-title-row { display: block; }
 
       /* ── Modals ── */
       .modal-overlay {

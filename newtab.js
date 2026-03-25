@@ -29,7 +29,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 function initTheme() {
   if (localStorage.getItem("dark-mode") === "true")
     document.body.classList.add("dark");
-  state.collapsed = new Set(JSON.parse(localStorage.getItem("bm-collapsed") || "[]"));
+  state.collapsed = new Set(
+    JSON.parse(localStorage.getItem("bm-collapsed") || "[]"),
+  );
 }
 
 async function loadState() {
@@ -38,11 +40,14 @@ async function loadState() {
   state.all = flatten(state.tree);
   state.folders = getFolders(state.tree);
 
-  state.meta = (await chrome.storage.local.get("bm_meta_v2"))["bm_meta_v2"] || {};
+  state.meta =
+    (await chrome.storage.local.get("bm_meta_v2"))["bm_meta_v2"] || {};
   state.view = localStorage.getItem("view-mode") || "grid";
 
   const tagSet = new Set();
-  Object.values(state.meta).forEach((m) => (m.tags || []).forEach((t) => tagSet.add(t)));
+  Object.values(state.meta).forEach((m) =>
+    (m.tags || []).forEach((t) => tagSet.add(t)),
+  );
   state.tags = Array.from(tagSet).sort();
 
   checkBrokenLinks();
@@ -58,34 +63,59 @@ function renderSidebar() {
   renderFolderNode(state.tree, fs, 0);
 
   const tagList = document.getElementById("tag-list");
-  tagList.innerHTML = state.tags.slice(0, 10).map(t => `<button class="tag" style="padding: 2px 8px; cursor: pointer; border: none; font-size: 10px; border-radius: 4px; background: var(--surface-thick);" onclick="setFilter('tag:${t}')"># ${t}</button>`).join("");
-  document.getElementById("tag-suggestions").innerHTML = state.tags.map(t => `<option value="${t}">`).join("");
+  tagList.innerHTML = state.tags
+    .slice(0, 10)
+    .map(
+      (t) =>
+        `<button class="tag" style="padding: 2px 8px; cursor: pointer; border: none; font-size: 10px; border-radius: 4px; background: var(--surface-thick);" onclick="setFilter('tag:${t}')"># ${t}</button>`,
+    )
+    .join("");
+  document.getElementById("tag-suggestions").innerHTML = state.tags
+    .map((t) => `<option value="${t}">`)
+    .join("");
 }
 
 function renderFolderNode(nodes, container, depth) {
-  nodes.filter((n) => !n.url).forEach((f) => {
-    const isCollapsed = state.collapsed.has(f.id);
-    const hasSub = f.children && f.children.some((c) => !c.url);
-    const row = document.createElement("div");
-    row.className = `folder-row ${state.filter === "folder:" + f.id ? "active" : ""}`;
-    row.style.paddingLeft = depth * 10 + "px";
-    row.draggable = true;
-    row.innerHTML = `<div class="folder-arrow ${!isCollapsed ? "expanded" : ""}" style="visibility: ${hasSub ? "visible" : "hidden"}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div><div class="folder-content"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>${escapeHTML(f.title || "Folder")}</span></div>`;
+  nodes
+    .filter((n) => !n.url)
+    .forEach((f) => {
+      const isCollapsed = state.collapsed.has(f.id);
+      const hasSub = f.children && f.children.some((c) => !c.url);
+      const row = document.createElement("div");
+      row.className = `folder-row ${state.filter === "folder:" + f.id ? "active" : ""}`;
+      row.style.paddingLeft = depth * 10 + "px";
+      row.draggable = true;
+      row.innerHTML = `<div class="folder-arrow ${!isCollapsed ? "expanded" : ""}" style="visibility: ${hasSub ? "visible" : "hidden"}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div><div class="folder-content"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>${escapeHTML(f.title || "Folder")}</span></div>`;
 
-    row.ondragstart = (e) => { e.dataTransfer.setData("sourceId", f.id); e.dataTransfer.setData("sourceType", "folder"); };
-    row.ondragover = (e) => { e.preventDefault(); row.classList.add("drag-over"); };
-    row.ondragleave = () => row.classList.remove("drag-over");
-    row.ondrop = (e) => { e.preventDefault(); row.classList.remove("drag-over"); handleDrop(e, f.id); };
-    if (hasSub) row.querySelector(".folder-arrow").onclick = (e) => { e.stopPropagation(); toggleFolder(f.id); };
-    row.querySelector(".folder-content").onclick = () => setFilter("folder:" + f.id);
-    container.appendChild(row);
-    if (hasSub) {
-      const childContainer = document.createElement("div");
-      childContainer.className = `folder-children ${!isCollapsed ? "visible" : ""}`;
-      container.appendChild(childContainer);
-      renderFolderNode(f.children, childContainer, depth + 1);
-    }
-  });
+      row.ondragstart = (e) => {
+        e.dataTransfer.setData("sourceId", f.id);
+        e.dataTransfer.setData("sourceType", "folder");
+      };
+      row.ondragover = (e) => {
+        e.preventDefault();
+        row.classList.add("drag-over");
+      };
+      row.ondragleave = () => row.classList.remove("drag-over");
+      row.ondrop = (e) => {
+        e.preventDefault();
+        row.classList.remove("drag-over");
+        handleDrop(e, f.id);
+      };
+      if (hasSub)
+        row.querySelector(".folder-arrow").onclick = (e) => {
+          e.stopPropagation();
+          toggleFolder(f.id);
+        };
+      row.querySelector(".folder-content").onclick = () =>
+        setFilter("folder:" + f.id);
+      container.appendChild(row);
+      if (hasSub) {
+        const childContainer = document.createElement("div");
+        childContainer.className = `folder-children ${!isCollapsed ? "visible" : ""}`;
+        container.appendChild(childContainer);
+        renderFolderNode(f.children, childContainer, depth + 1);
+      }
+    });
 }
 
 function renderMain() {
@@ -124,15 +154,16 @@ function renderGroup(container, title, bms, folderId) {
   const hdr = document.createElement("div");
   hdr.className = "group-header";
   hdr.innerHTML = `<div class="group-title">${escapeHTML(title)} <span style="opacity:0.3; font-size:12px;">${bms.length}</span></div><div style="display: flex; gap: 8px;"><button class="btn btn-export" style="padding: 4px 8px; font-size: 11px;">Export HTML</button><button class="btn btn-copy" style="padding: 4px 8px; font-size: 11px;">Copy Links</button></div>`;
-  hdr.querySelector('.btn-export').onclick = () => exportToHTML(folderId);
-  hdr.querySelector('.btn-copy').onclick = () => shareFolder(folderId);
+  hdr.querySelector(".btn-export").onclick = () => exportToHTML(folderId);
+  hdr.querySelector(".btn-copy").onclick = () => shareFolder(folderId);
   container.appendChild(hdr);
 
   const inner = document.createElement("div");
   inner.className = state.view;
   inner.style.display = "grid";
   inner.style.gap = state.view === "grid" ? "20px" : "8px";
-  inner.style.gridTemplateColumns = state.view === "grid" ? "repeat(auto-fill, minmax(280px, 1fr))" : "1fr";
+  inner.style.gridTemplateColumns =
+    state.view === "grid" ? "repeat(auto-fill, minmax(280px, 1fr))" : "1fr";
   inner.style.alignItems = "start";
   bms.forEach((bm) => inner.appendChild(createCard(bm)));
   container.appendChild(inner);
@@ -143,32 +174,58 @@ function createCard(bm) {
   const div = document.createElement("div");
   div.className = `card ${state.broken.includes(bm.id) ? "broken" : ""}`;
   div.draggable = true;
-  const domain = new URL(bm.url || "http://unknown").hostname.replace("www.","");
+  const domain = new URL(bm.url || "http://unknown").hostname.replace(
+    "www.",
+    "",
+  );
   const favicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-  
-  const tagsHTML = (meta.tags || []).map(t => `<span class="c-tag">#${escapeHTML(t)}</span>`).join("");
-  const notesSnippet = meta.notes ? `<div class="c-notes">${escapeHTML(meta.notes)}</div>` : "";
+
+  const tagsHTML = (meta.tags || [])
+    .map((t) => `<span class="c-tag">#${escapeHTML(t)}</span>`)
+    .join("");
+  const notesSnippet = meta.notes
+    ? `<div class="c-notes">${escapeHTML(meta.notes)}</div>`
+    : "";
 
   div.innerHTML = `
     <div class="visual"><img class="lazy-thumb" data-url="${bm.url}" src="" alt=""><div class="favicon-overlay"><img src="${favicon}" alt=""></div></div>
+    <div class="details">
+        <div class="c-title-row">
+            <div class="c-title">${escapeHTML(bm.title || bm.url)}</div>
+            <div class="c-meta">${domain}</div>
+        </div>
+        <div class="c-tags-wrap">${tagsHTML}</div>
+        ${notesSnippet}
+    </div>
     <div class="card-actions">
         <button class="action-circle btn-copy-one" title="Copy URL"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
         <button class="action-circle btn-pin ${meta.pinned ? "active" : ""}" title="Pin/Unpin"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></button>
         <button class="action-circle btn-edit" title="Edit Properties"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-    </div>
-    <div class="details">
-        <div class="c-title">${escapeHTML(bm.title || bm.url)}</div>
-        <div class="c-meta">${domain}</div>
-        <div class="c-tags-wrap">${tagsHTML}</div>
-        ${notesSnippet}
     </div>`;
-  
-  div.ondragstart = (e) => { e.dataTransfer.setData("sourceId", bm.id); e.dataTransfer.setData("sourceType", "bookmark"); div.classList.add("dragging"); };
+
+  div.ondragstart = (e) => {
+    e.dataTransfer.setData("sourceId", bm.id);
+    e.dataTransfer.setData("sourceType", "bookmark");
+    div.classList.add("dragging");
+  };
   div.ondragend = () => div.classList.remove("dragging");
-  div.onclick = (e) => { if (e.target.closest(".action-circle")) return; window.open(bm.url, "_blank"); };
-  div.querySelector(".btn-pin").onclick = (e) => { e.stopPropagation(); togglePin(bm.id); };
-  div.querySelector(".btn-edit").onclick = (e) => { e.stopPropagation(); openEdit(bm.id); };
-  div.querySelector(".btn-copy-one").onclick = (e) => { e.stopPropagation(); navigator.clipboard.writeText(bm.url); showToast("URL Copied."); };
+  div.onclick = (e) => {
+    if (e.target.closest(".action-circle")) return;
+    window.open(bm.url, "_blank");
+  };
+  div.querySelector(".btn-pin").onclick = (e) => {
+    e.stopPropagation();
+    togglePin(bm.id);
+  };
+  div.querySelector(".btn-edit").onclick = (e) => {
+    e.stopPropagation();
+    openEdit(bm.id);
+  };
+  div.querySelector(".btn-copy-one").onclick = (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(bm.url);
+    showToast("URL Copied.");
+  };
   loadThumbnail(div.querySelector(".lazy-thumb"), bm.url);
   return div;
 }
@@ -178,28 +235,38 @@ function createCard(bm) {
 async function exportToHTML(id) {
   let nodes = [];
   if (id === "all") nodes = state.tree;
-  else if (id === "pinned") nodes = state.all.filter((bm) => state.meta[bm.id]?.pinned);
+  else if (id === "pinned")
+    nodes = state.all.filter((bm) => state.meta[bm.id]?.pinned);
   else nodes = await new Promise((r) => chrome.bookmarks.getSubTree(id, r));
 
   let html = `<!DOCTYPE NETSCAPE-Bookmark-file-1><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8"><TITLE>Export</TITLE><H1>Bookmarks</H1><DL><p>\n`;
   const walk = (items, indent) => {
     items.forEach((n) => {
       const tabs = "    ".repeat(indent);
-      if (n.url) html += `${tabs}<DT><A HREF="${n.url}">${escapeHTML(n.title)}</A>\n`;
-      else { html += `${tabs}<DT><H3>${escapeHTML(n.title)}</H3>\n${tabs}<DL><p>\n`; walk(n.children || [], indent + 1); html += `${tabs}</DL><p>\n`; }
+      if (n.url)
+        html += `${tabs}<DT><A HREF="${n.url}">${escapeHTML(n.title)}</A>\n`;
+      else {
+        html += `${tabs}<DT><H3>${escapeHTML(n.title)}</H3>\n${tabs}<DL><p>\n`;
+        walk(n.children || [], indent + 1);
+        html += `${tabs}</DL><p>\n`;
+      }
     });
   };
   walk(nodes, 1);
   html += `</DL><p>`;
   const blob = new Blob([html], { type: "text/html" });
-  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "export.html"; a.click();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "export.html";
+  a.click();
   showToast("Exporting...");
 }
 
 async function shareFolder(id) {
   let list = [];
   if (id === "all") list = state.all;
-  else if (id === "pinned") list = state.all.filter((bm) => state.meta[bm.id]?.pinned);
+  else if (id === "pinned")
+    list = state.all.filter((bm) => state.meta[bm.id]?.pinned);
   else {
     const nodes = await new Promise((r) => chrome.bookmarks.getSubTree(id, r));
     list = flatten(nodes);
@@ -214,7 +281,15 @@ async function shareFolder(id) {
 async function handleDrop(e, targetId) {
   if (targetId === "all") return;
   const sourceId = e.dataTransfer.getData("sourceId");
-  try { await chrome.bookmarks.move(sourceId, { parentId: targetId }); showToast(`Moved.`); await loadState(); renderSidebar(); renderMain(); } catch (err) { showToast("Error: " + err.message); }
+  try {
+    await chrome.bookmarks.move(sourceId, { parentId: targetId });
+    showToast(`Moved.`);
+    await loadState();
+    renderSidebar();
+    renderMain();
+  } catch (err) {
+    showToast("Error: " + err.message);
+  }
 }
 
 async function createNewFolder() {
@@ -224,15 +299,25 @@ async function createNewFolder() {
     const folder = await chrome.bookmarks.create({ parentId, title: name });
     await loadState();
     const fp = document.getElementById("edit-folder");
-    fp.innerHTML = state.folders.map(f => `<option value="${f.id}">${"&nbsp;".repeat(f.depth * 2)}${escapeHTML(f.title)}</option>`).join("");
+    fp.innerHTML = state.folders
+      .map(
+        (f) =>
+          `<option value="${f.id}">${"&nbsp;".repeat(f.depth * 2)}${escapeHTML(f.title)}</option>`,
+      )
+      .join("");
     fp.value = folder.id;
-    renderSidebar(); showToast("Folder created.");
+    renderSidebar();
+    showToast("Folder created.");
   }
 }
 
 function toggleFolder(id) {
-  if (state.collapsed.has(id)) state.collapsed.delete(id); else state.collapsed.add(id);
-  localStorage.setItem("bm-collapsed", JSON.stringify(Array.from(state.collapsed)));
+  if (state.collapsed.has(id)) state.collapsed.delete(id);
+  else state.collapsed.add(id);
+  localStorage.setItem(
+    "bm-collapsed",
+    JSON.stringify(Array.from(state.collapsed)),
+  );
   renderSidebar();
 }
 
@@ -249,19 +334,29 @@ async function handleEdit(e) {
   const title = document.getElementById("edit-title").value;
   const url = document.getElementById("edit-url").value;
   const parentId = document.getElementById("edit-folder").value;
-  const tags = document.getElementById("edit-tags").value.split(",").map(t => t.trim().toLowerCase()).filter(t => t);
+  const tags = document
+    .getElementById("edit-tags")
+    .value.split(",")
+    .map((t) => t.trim().toLowerCase())
+    .filter((t) => t);
   const notes = document.getElementById("edit-notes").value;
   await chrome.bookmarks.update(id, { title, url });
   await chrome.bookmarks.move(id, { parentId });
   state.meta[id] = { ...state.meta[id], tags, notes };
   await chrome.storage.local.set({ bm_meta_v2: state.meta });
-  showToast("Updated."); closeModal(); await loadState(); renderSidebar(); renderMain();
+  showToast("Updated.");
+  closeModal();
+  await loadState();
+  renderSidebar();
+  renderMain();
 }
 
 function getFilteredList() {
   let list = state.all;
-  if (state.filter === "pinned") list = list.filter((bm) => state.meta[bm.id]?.pinned);
-  else if (state.filter === "broken") list = list.filter((bm) => state.broken.includes(bm.id));
+  if (state.filter === "pinned")
+    list = list.filter((bm) => state.meta[bm.id]?.pinned);
+  else if (state.filter === "broken")
+    list = list.filter((bm) => state.broken.includes(bm.id));
   else if (state.filter.startsWith("folder:")) {
     const id = state.filter.split(":")[1];
     const node = findNode(state.tree, id);
@@ -272,59 +367,109 @@ function getFilteredList() {
   }
   if (state.search) {
     const q = state.search.toLowerCase();
-    list = list.filter(bm => (bm.title || "").toLowerCase().includes(q) || (bm.url || "").toLowerCase().includes(q));
+    list = list.filter(
+      (bm) =>
+        (bm.title || "").toLowerCase().includes(q) ||
+        (bm.url || "").toLowerCase().includes(q),
+    );
   }
   return list;
 }
 
 function flatten(nodes) {
   let out = [];
-  nodes.forEach((n) => { if (n.url) out.push(n); if (n.children) out = out.concat(flatten(n.children)); });
+  nodes.forEach((n) => {
+    if (n.url) out.push(n);
+    if (n.children) out = out.concat(flatten(n.children));
+  });
   return out;
 }
 
 function getFolders(nodes) {
   let out = [];
-  nodes.filter((n) => !n.url).forEach((n) => { out.push({ id: n.id, title: n.title, depth: 0 }); out = out.concat(getNestedFolders(n.children || [], 1)); });
+  nodes
+    .filter((n) => !n.url)
+    .forEach((n) => {
+      out.push({ id: n.id, title: n.title, depth: 0 });
+      out = out.concat(getNestedFolders(n.children || [], 1));
+    });
   return out;
 }
 function getNestedFolders(nodes, depth) {
   let out = [];
-  nodes.filter((n) => !n.url).forEach((n) => { out.push({ id: n.id, title: n.title, depth }); out = out.concat(getNestedFolders(n.children || [], depth + 1)); });
+  nodes
+    .filter((n) => !n.url)
+    .forEach((n) => {
+      out.push({ id: n.id, title: n.title, depth });
+      out = out.concat(getNestedFolders(n.children || [], depth + 1));
+    });
   return out;
 }
 
 function findNode(nodes, id) {
-  for (const n of nodes) { if (n.id === id) return n; if (n.children) { const res = findNode(n.children, id); if (res) return res; } }
+  for (const n of nodes) {
+    if (n.id === id) return n;
+    if (n.children) {
+      const res = findNode(n.children, id);
+      if (res) return res;
+    }
+  }
   return null;
 }
 
 function registerEvents() {
-  document.getElementById("search-input").oninput = (e) => { state.search = e.target.value; renderMain(); };
+  document.getElementById("search-input").oninput = (e) => {
+    state.search = e.target.value;
+    renderMain();
+  };
   document.getElementById("nav-all").onclick = () => setFilter("all");
   document.getElementById("nav-pinned").onclick = () => setFilter("pinned");
   document.getElementById("nav-broken").onclick = () => setFilter("broken");
   document.getElementById("view-grid").onclick = () => setView("grid");
   document.getElementById("view-list").onclick = () => setView("list");
-  document.getElementById("btn-dark-toggle").onclick = () => { document.body.classList.toggle("dark"); localStorage.setItem("dark-mode", document.body.classList.contains("dark")); };
+  document.getElementById("btn-dark-toggle").onclick = () => {
+    document.body.classList.toggle("dark");
+    localStorage.setItem("dark-mode", document.body.classList.contains("dark"));
+  };
   document.getElementById("btn-save-tabs").onclick = () => {
     const name = prompt("Folder name?");
-    if (name) chrome.runtime.sendMessage({ action: "saveTabs", folderName: name }, () => loadState().then(() => { renderSidebar(); renderMain(); }));
+    if (name)
+      chrome.runtime.sendMessage({ action: "saveTabs", folderName: name }, () =>
+        loadState().then(() => {
+          renderSidebar();
+          renderMain();
+        }),
+      );
   };
   document.getElementById("btn-export-all").onclick = () => exportToHTML("all");
   document.getElementById("modal-cancel").onclick = closeModal;
   document.getElementById("edit-form").onsubmit = handleEdit;
   document.getElementById("btn-new-folder").onclick = createNewFolder;
-  document.getElementById("btn-delete").onclick = async () => { if (confirm("Remove?")) { await chrome.bookmarks.remove(state.currentEditId); closeModal(); await loadState(); renderSidebar(); renderMain(); } };
+  document.getElementById("btn-delete").onclick = async () => {
+    if (confirm("Remove?")) {
+      await chrome.bookmarks.remove(state.currentEditId);
+      closeModal();
+      await loadState();
+      renderSidebar();
+      renderMain();
+    }
+  };
 }
 
 function setFilter(f) {
   state.filter = f;
-  document.querySelectorAll(".nav-item, .folder-row").forEach((el) => el.classList.remove("active"));
-  renderSidebar(); renderMain();
+  document
+    .querySelectorAll(".nav-item, .folder-row")
+    .forEach((el) => el.classList.remove("active"));
+  renderSidebar();
+  renderMain();
 }
 
-function setView(v) { state.view = v; localStorage.setItem("view-mode", v); renderMain(); }
+function setView(v) {
+  state.view = v;
+  localStorage.setItem("view-mode", v);
+  renderMain();
+}
 
 function openEdit(id) {
   const bm = state.all.find((x) => x.id === id);
@@ -336,25 +481,58 @@ function openEdit(id) {
   document.getElementById("edit-tags").value = (m.tags || []).join(", ");
   document.getElementById("edit-notes").value = m.notes || "";
   const fp = document.getElementById("edit-folder");
-  fp.innerHTML = state.folders.map(f => `<option value="${f.id}">${"&nbsp;".repeat(f.depth * 2)}${escapeHTML(f.title)}</option>`).join("");
+  fp.innerHTML = state.folders
+    .map(
+      (f) =>
+        `<option value="${f.id}">${"&nbsp;".repeat(f.depth * 2)}${escapeHTML(f.title)}</option>`,
+    )
+    .join("");
   fp.value = bm.parentId || "";
   document.getElementById("edit-modal").classList.add("active");
 }
 
-function closeModal() { document.getElementById("edit-modal").classList.remove("active"); }
-function showToast(m) { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("active"); setTimeout(() => t.classList.remove("active"), 2000); }
+function closeModal() {
+  document.getElementById("edit-modal").classList.remove("active");
+}
+function showToast(m) {
+  const t = document.getElementById("toast");
+  t.textContent = m;
+  t.classList.add("active");
+  setTimeout(() => t.classList.remove("active"), 2000);
+}
 function escapeHTML(s) {
-  return String(s || "").replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[m]);
+  return String(s || "").replace(
+    /[&<>"']/g,
+    (m) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        m
+      ],
+  );
 }
 
 function loadThumbnail(img, url) {
   if (state.view === "list") return;
-  chrome.runtime.sendMessage({ action: "fetchMetadata", url }, (res) => { if (res?.success && res.data?.ogImage) { img.src = res.data.ogImage; img.onload = () => img.classList.add("loaded"); } });
+  chrome.runtime.sendMessage({ action: "fetchMetadata", url }, (res) => {
+    if (res?.success && res.data?.ogImage) {
+      img.src = res.data.ogImage;
+      img.onload = () => img.classList.add("loaded");
+    }
+  });
 }
 
 function checkBrokenLinks() {
   state.all.forEach((bm) => {
-    chrome.runtime.sendMessage({ action: "checkHealth", url: bm.url }, (res) => { if (res?.status === "broken" && !state.broken.includes(bm.id)) { state.broken.push(bm.id); document.getElementById("count-broken").textContent = state.broken.length; renderMain(); } });
+    chrome.runtime.sendMessage(
+      { action: "checkHealth", url: bm.url },
+      (res) => {
+        if (res?.status === "broken" && !state.broken.includes(bm.id)) {
+          state.broken.push(bm.id);
+          document.getElementById("count-broken").textContent =
+            state.broken.length;
+          renderMain();
+        }
+      },
+    );
   });
 }
 
