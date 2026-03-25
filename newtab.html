@@ -606,6 +606,37 @@
       textarea:focus {
         border-color: var(--ink-dim);
       }
+
+      /* ── Insights Dashboard ── */
+      .insights-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+      .insight-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; text-align: center; }
+      .insight-num { font-family: 'Instrument Serif'; font-size: 36px; line-height: 1; color: var(--ink); }
+      .insight-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-dim); margin-top: 4px; }
+      .insight-section { margin-bottom: 36px; }
+      .insight-section-title { font-family: 'Instrument Serif'; font-size: 20px; margin-bottom: 16px; color: var(--ink); }
+      .domain-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; font-size: 13px; }
+      .domain-bar-label { width: 140px; text-align: right; color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .domain-bar-track { flex: 1; height: 24px; background: var(--surface-sub); border-radius: 6px; overflow: hidden; }
+      .domain-bar-fill { height: 100%; background: var(--accent); border-radius: 6px; transition: width 0.5s; display: flex; align-items: center; padding-left: 8px; font-size: 11px; color: var(--surface); font-weight: 600; min-width: 28px; }
+      .tag-cloud { display: flex; flex-wrap: wrap; gap: 6px; }
+      .tag-cloud-item { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; background: var(--surface-thick); color: var(--ink-dim); cursor: pointer; transition: var(--transition); }
+      .tag-cloud-item:hover { background: var(--accent); color: var(--surface); }
+
+      /* ── Duplicates ── */
+      .dupe-group { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+      .dupe-url { font-size: 12px; color: var(--ink-fade); font-family: 'JetBrains Mono'; margin-bottom: 12px; word-break: break-all; }
+      .dupe-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-top: 1px solid var(--border); }
+      .dupe-item:first-of-type { border-top: none; }
+      .dupe-item-title { font-size: 14px; color: var(--ink); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .dupe-item-folder { font-size: 11px; color: var(--ink-dim); margin-left: 12px; flex-shrink: 0; }
+      .dupe-remove-btn { background: none; border: none; color: var(--red); cursor: pointer; font-size: 12px; font-weight: 600; margin-left: 12px; padding: 4px 8px; border-radius: 6px; }
+      .dupe-remove-btn:hover { background: rgba(255,77,77,0.1); }
+
+      /* ── Wayback Button ── */
+      .wayback-btn { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--green); background: none; border: 1px solid var(--green); border-radius: 6px; padding: 2px 8px; cursor: pointer; margin-top: 4px; font-weight: 600; }
+      .wayback-btn:hover { background: var(--green); color: #fff; }
+
+      @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
     </style>
   </head>
   <body>
@@ -667,6 +698,18 @@
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
             Broken <span class="count" id="count-broken">0</span>
+          </button>
+          <button class="nav-item" id="nav-duplicates" data-id="duplicates" style="color: var(--amber)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="8" y="2" width="13" height="13" rx="2"/><rect x="3" y="9" width="13" height="13" rx="2"/>
+            </svg>
+            Duplicates <span class="count" id="count-dupes">0</span>
+          </button>
+          <button class="nav-item" id="nav-insights" data-id="insights">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            Insights
           </button>
         </div>
 

@@ -1,4 +1,4 @@
-// newtab.js — Bookmark Organizer Core v2.9
+// newtab.js — Bookmark Organizer Core v3.0
 
 let state = {
   tree: [],
@@ -6,6 +6,7 @@ let state = {
   folders: [],
   meta: {},
   broken: [],
+  duplicates: [],
   filter: "all",
   view: "grid",
   search: "",
@@ -51,6 +52,20 @@ async function loadState() {
   state.tags = Array.from(tagSet).sort();
 
   checkBrokenLinks();
+  loadDuplicates();
+}
+
+// ── Duplicates ──
+
+function loadDuplicates() {
+  chrome.runtime.sendMessage({ action: "getDuplicates" }, (res) => {
+    if (res && res.duplicates) {
+      state.duplicates = res.duplicates;
+      document.getElementById("count-dupes").textContent =
+        res.duplicates.length;
+      if (state.filter === "duplicates") renderMain();
+    }
+  });
 }
 
 // ── Rendering ──
@@ -121,6 +136,22 @@ function renderFolderNode(nodes, container, depth) {
 function renderMain() {
   const container = document.getElementById("content");
   container.innerHTML = "";
+
+  // ── Special views ──
+  if (state.filter === "insights") {
+    container.className = "insights-view";
+    container.style.display = "block";
+    renderInsights(container);
+    return;
+  }
+  if (state.filter === "duplicates") {
+    container.className = "duplicates-view";
+    container.style.display = "block";
+    renderDuplicates(container);
+    return;
+  }
+
+  // ── Normal views ──
   if (state.filter === "all" && !state.search) {
     container.className = "grouped-view";
     container.style.display = "block";
@@ -171,8 +202,9 @@ function renderGroup(container, title, bms, folderId) {
 
 function createCard(bm) {
   const meta = state.meta[bm.id] || {};
+  const isBroken = state.broken.includes(bm.id);
   const div = document.createElement("div");
-  div.className = `card ${state.broken.includes(bm.id) ? "broken" : ""}`;
+  div.className = `card ${isBroken ? "broken" : ""}`;
   div.draggable = true;
   const domain = new URL(bm.url || "http://unknown").hostname.replace(
     "www.",
@@ -187,6 +219,11 @@ function createCard(bm) {
     ? `<div class="c-notes">${escapeHTML(meta.notes)}</div>`
     : "";
 
+  // Wayback Machine button for broken links
+  const waybackHTML = isBroken
+    ? `<button class="wayback-btn" onclick="event.stopPropagation(); window.open('https://web.archive.org/web/*/${encodeURIComponent(bm.url)}', '_blank')">View Archived</button>`
+    : "";
+
   div.innerHTML = `
     <div class="visual"><img class="lazy-thumb" data-url="${bm.url}" src="" alt=""><div class="favicon-overlay"><img src="${favicon}" alt=""></div></div>
     <div class="details">
@@ -196,6 +233,7 @@ function createCard(bm) {
         </div>
         <div class="c-tags-wrap">${tagsHTML}</div>
         ${notesSnippet}
+        ${waybackHTML}
     </div>
     <div class="card-actions">
         <button class="action-circle btn-copy-one" title="Copy URL"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
@@ -210,7 +248,7 @@ function createCard(bm) {
   };
   div.ondragend = () => div.classList.remove("dragging");
   div.onclick = (e) => {
-    if (e.target.closest(".action-circle")) return;
+    if (e.target.closest(".action-circle") || e.target.closest(".wayback-btn")) return;
     window.open(bm.url, "_blank");
   };
   div.querySelector(".btn-pin").onclick = (e) => {
@@ -228,6 +266,127 @@ function createCard(bm) {
   };
   loadThumbnail(div.querySelector(".lazy-thumb"), bm.url);
   return div;
+}
+
+// ── Insights Dashboard ──
+
+function renderInsights(container) {
+  const total = state.all.length;
+  const folderCount = state.folders.length;
+  const tagCount = state.tags.length;
+  const brokenCount = state.broken.length;
+  const tagged = state.all.filter((bm) => (state.meta[bm.id]?.tags || []).length > 0).length;
+  const untagged = total - tagged;
+
+  // Domain distribution
+  const domainMap = {};
+  state.all.forEach((bm) => {
+    try {
+      const d = new URL(bm.url).hostname.replace("www.", "");
+      domainMap[d] = (domainMap[d] || 0) + 1;
+    } catch (e) {}
+  });
+  const topDomains = Object.entries(domainMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 12);
+  const maxDomain = topDomains.length ? topDomains[0][1] : 1;
+
+  // Tag frequency
+  const tagFreq = {};
+  Object.values(state.meta).forEach((m) =>
+    (m.tags || []).forEach((t) => {
+      tagFreq[t] = (tagFreq[t] || 0) + 1;
+    }),
+  );
+  const sortedTags = Object.entries(tagFreq).sort((a, b) => b[1] - a[1]);
+
+  // Stale bookmarks (oldest with no tags/notes)
+  const stale = state.all
+    .filter((bm) => {
+      const m = state.meta[bm.id];
+      return !m || ((!m.tags || m.tags.length === 0) && !m.notes);
+    })
+    .sort((a, b) => (a.dateAdded || 0) - (b.dateAdded || 0))
+    .slice(0, 8);
+
+  container.innerHTML = `
+    <div class="group-header" style="margin-top:0;"><div class="group-title">Insights</div></div>
+
+    <div class="insights-grid">
+      <div class="insight-card"><div class="insight-num">${total}</div><div class="insight-label">Total Bookmarks</div></div>
+      <div class="insight-card"><div class="insight-num">${folderCount}</div><div class="insight-label">Folders</div></div>
+      <div class="insight-card"><div class="insight-num">${tagCount}</div><div class="insight-label">Unique Tags</div></div>
+      <div class="insight-card"><div class="insight-num">${brokenCount}</div><div class="insight-label" style="color:var(--red)">Broken Links</div></div>
+      <div class="insight-card"><div class="insight-num">${tagged}</div><div class="insight-label" style="color:var(--green)">Tagged</div></div>
+      <div class="insight-card"><div class="insight-num">${untagged}</div><div class="insight-label">Untagged</div></div>
+    </div>
+
+    <div class="insight-section">
+      <div class="insight-section-title">Top Domains</div>
+      ${topDomains
+        .map(
+          ([d, c]) =>
+            `<div class="domain-bar-row"><div class="domain-bar-label">${escapeHTML(d)}</div><div class="domain-bar-track"><div class="domain-bar-fill" style="width:${Math.round((c / maxDomain) * 100)}%">${c}</div></div></div>`,
+        )
+        .join("")}
+    </div>
+
+    <div class="insight-section">
+      <div class="insight-section-title">Tag Cloud</div>
+      <div class="tag-cloud">
+        ${sortedTags
+          .map(
+            ([t, c]) =>
+              `<span class="tag-cloud-item" onclick="setFilter('tag:${t}')" style="font-size:${Math.min(10 + c * 2, 22)}px">#${escapeHTML(t)} <span style="opacity:0.5;font-size:10px">${c}</span></span>`,
+          )
+          .join("")}
+        ${sortedTags.length === 0 ? '<span style="color:var(--ink-fade);font-size:13px">No tags yet. Tag your bookmarks to see them here.</span>' : ""}
+      </div>
+    </div>
+
+    <div class="insight-section">
+      <div class="insight-section-title">Needs Attention <span style="opacity:0.4;font-size:13px">(untagged, oldest first)</span></div>
+      ${stale
+        .map((bm) => {
+          const d = new URL(bm.url || "http://x").hostname.replace("www.", "");
+          const age = bm.dateAdded ? Math.floor((Date.now() - bm.dateAdded) / 86400000) : "?";
+          return `<div class="dupe-item" style="cursor:pointer" onclick="openEdit('${bm.id}')"><div class="dupe-item-title">${escapeHTML(bm.title || bm.url)}</div><div class="dupe-item-folder">${d} · ${age}d old</div></div>`;
+        })
+        .join("")}
+      ${stale.length === 0 ? '<span style="color:var(--ink-fade);font-size:13px">All bookmarks are tagged!</span>' : ""}
+    </div>
+  `;
+}
+
+// ── Duplicates View ──
+
+function renderDuplicates(container) {
+  if (state.duplicates.length === 0) {
+    container.innerHTML = `
+      <div class="group-header" style="margin-top:0;"><div class="group-title">Duplicates</div></div>
+      <div style="text-align:center; padding:60px 0; color:var(--ink-dim);">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.3"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
+        <p style="margin-top:12px; font-size:15px;">No duplicate bookmarks found.</p>
+      </div>`;
+    return;
+  }
+
+  let html = `<div class="group-header" style="margin-top:0;"><div class="group-title">Duplicates <span style="opacity:0.3; font-size:12px;">${state.duplicates.length} groups</span></div></div>`;
+
+  state.duplicates.forEach((group, gi) => {
+    html += `<div class="dupe-group"><div class="dupe-url">${escapeHTML(group[0].url)}</div>`;
+    group.forEach((bm, bi) => {
+      const isKeep = bi === 0;
+      html += `<div class="dupe-item">
+        <div class="dupe-item-title">${escapeHTML(bm.title || bm.url)} ${isKeep ? '<span style="font-size:10px;color:var(--green);font-weight:700">KEEP</span>' : ""}</div>
+        <div class="dupe-item-folder">ID: ${bm.id}</div>
+        ${!isKeep ? `<button class="dupe-remove-btn" onclick="removeDuplicate('${bm.id}', ${gi})">Remove</button>` : ""}
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  container.innerHTML = html;
 }
 
 // ── Folder Actions ──
@@ -351,6 +510,15 @@ async function handleEdit(e) {
   renderMain();
 }
 
+async function removeDuplicate(id, groupIndex) {
+  chrome.runtime.sendMessage({ action: "removeDuplicates", ids: [id] }, async () => {
+    showToast("Removed duplicate.");
+    await loadState();
+    renderSidebar();
+    renderMain();
+  });
+}
+
 function getFilteredList() {
   let list = state.all;
   if (state.filter === "pinned")
@@ -370,7 +538,9 @@ function getFilteredList() {
     list = list.filter(
       (bm) =>
         (bm.title || "").toLowerCase().includes(q) ||
-        (bm.url || "").toLowerCase().includes(q),
+        (bm.url || "").toLowerCase().includes(q) ||
+        (state.meta[bm.id]?.tags || []).some((t) => t.includes(q)) ||
+        (state.meta[bm.id]?.notes || "").toLowerCase().includes(q),
     );
   }
   return list;
@@ -425,6 +595,8 @@ function registerEvents() {
   document.getElementById("nav-all").onclick = () => setFilter("all");
   document.getElementById("nav-pinned").onclick = () => setFilter("pinned");
   document.getElementById("nav-broken").onclick = () => setFilter("broken");
+  document.getElementById("nav-duplicates").onclick = () => setFilter("duplicates");
+  document.getElementById("nav-insights").onclick = () => setFilter("insights");
   document.getElementById("view-grid").onclick = () => setView("grid");
   document.getElementById("view-list").onclick = () => setView("list");
   document.getElementById("btn-dark-toggle").onclick = () => {
@@ -461,6 +633,8 @@ function setFilter(f) {
   document
     .querySelectorAll(".nav-item, .folder-row")
     .forEach((el) => el.classList.remove("active"));
+  const navEl = document.querySelector(`[data-id="${f}"], #nav-${f}`);
+  if (navEl) navEl.classList.add("active");
   renderSidebar();
   renderMain();
 }
@@ -537,5 +711,7 @@ function checkBrokenLinks() {
 }
 
 window.setFilter = setFilter;
+window.openEdit = openEdit;
+window.removeDuplicate = removeDuplicate;
 window.handleDragOver = (e) => e.preventDefault();
 window.handleDrop = handleDrop;

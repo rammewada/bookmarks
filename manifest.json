@@ -10,14 +10,16 @@
     "favicon",
     "sessions",
     "history",
-    "contextMenus"
+    "contextMenus",
+    "scripting",
+    "alarms",
+    "notifications"
   ],
   "host_permissions": [
     "<all_urls>"
   ],
   "action": {
-    "default_popup": "popup.html",
-    "default_title": "Bookmark Organizer",
+    "default_title": "Save Bookmark",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
@@ -38,6 +40,8 @@
     {
       "resources": [
         "newtab.html",
+        "bookmark-overlay.js",
+        "bookmark-overlay.css",
         "icons/*"
       ],
       "matches": [
