@@ -1,131 +1,122 @@
-// Background service worker for Bookmark Organizer
-// Handles metadata fetching and caching
+// background.js - Bookmark health & metadata system (v2.2)
 
-const CACHE_KEY = 'bookmark_metadata_cache';
+const CACHE_KEY = 'bm_metadata_v2';
+const HEALTH_CACHE_KEY = 'bm_health_v2';
 const CACHE_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-// Listen for messages from the newtab page
+// Open organizer when a new bookmark is created (Star Hijack)
+chrome.bookmarks.onCreated.addListener((id, bookmark) => {
+    if (bookmark.url) {
+        chrome.tabs.create({ 
+            url: chrome.runtime.getURL('newtab.html') + '?edit=' + id 
+        });
+    }
+});
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'fetchMetadata') {
     handleMetadataFetch(request.url)
       .then(data => sendResponse({ success: true, data }))
       .catch(err => sendResponse({ success: false, error: err.message }));
-    return true; // Keep message channel open for async response
-  }
-
-  if (request.action === 'openOrganizer') {
-    chrome.tabs.create({ url: chrome.runtime.getURL('newtab.html') });
-    sendResponse({ success: true });
     return true;
   }
 
-  if (request.action === 'clearCache') {
-    chrome.storage.local.remove(CACHE_KEY, () => {
-      sendResponse({ success: true });
-    });
+  if (request.action === 'checkHealth') {
+    handleHealthCheck(request.url)
+      .then(status => sendResponse({ success: true, status }))
+      .catch(err => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (request.action === 'saveTabs') {
+    saveAllTabsToFolder(request.folderName)
+      .then(() => sendResponse({ success: true }))
+      .catch(err => sendResponse({ success: false, error: err.message }));
     return true;
   }
 });
 
 async function handleMetadataFetch(url) {
-  // Check cache first
-  const cached = await getCachedMetadata(url);
-  if (cached) return cached;
+  const cache = await getStorage(CACHE_KEY);
+  if (cache[url] && (Date.now() - cache[url].fetchedAt) < CACHE_EXPIRY) return cache[url];
 
-  try {
-    const metadata = await fetchPageMetadata(url);
-    await cacheMetadata(url, metadata);
-    return metadata;
-  } catch (e) {
-    // Return fallback with favicon only
-    const fallback = {
-      favicon: `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=64`,
-      ogImage: null,
-      title: null,
-      description: null,
-      cached: false
-    };
-    return fallback;
+  const meta = await fetchPageMetadata(url);
+  cache[url] = { ...meta, fetchedAt: Date.now() };
+  await setStorage(CACHE_KEY, cache);
+  return meta;
+}
+
+async function handleHealthCheck(url) {
+  const cache = await getStorage(HEALTH_CACHE_KEY);
+  if (cache[url] && (Date.now() - cache[url].checkedAt) < (24 * 60 * 60 * 1000)) {
+    return cache[url].status;
   }
+
+  let status = 'alive';
+  try {
+    const res = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
+  } catch (e) {
+    status = 'broken';
+  }
+
+  cache[url] = { status, checkedAt: Date.now() };
+  await setStorage(HEALTH_CACHE_KEY, cache);
+  return status;
 }
 
 async function fetchPageMetadata(url) {
   const hostname = new URL(url).hostname;
+  const fallback = {
+    favicon: `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`,
+    ogImage: null, title: null, description: null
+  };
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
-    clearTimeout(timeout);
-
-    if (!response.ok) throw new Error('Fetch failed');
-
+    const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!response.ok) return fallback;
     const html = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
 
-    const ogImage = doc.querySelector('meta[property="og:image"]')?.content ||
-      doc.querySelector('meta[name="twitter:image"]')?.content ||
-      null;
-
-    const ogDesc = doc.querySelector('meta[property="og:description"]')?.content ||
-      doc.querySelector('meta[name="description"]')?.content ||
-      null;
-
-    const title = doc.querySelector('meta[property="og:title"]')?.content ||
-      doc.querySelector('title')?.textContent ||
-      null;
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    const ogImageMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) || 
+                         html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+    const descMatch = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i) ||
+                      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i);
 
     return {
-      favicon: `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`,
-      ogImage: ogImage && ogImage.startsWith('http') ? ogImage : null,
-      title: title?.trim() || null,
-      description: ogDesc?.trim() || null,
-      cached: true,
-      fetchedAt: Date.now()
+      favicon: fallback.favicon,
+      ogImage: ogImageMatch ? ogImageMatch[1] : null,
+      title: titleMatch ? decodeHTMLEntities(titleMatch[1].trim()) : null,
+      description: descMatch ? decodeHTMLEntities(descMatch[1].trim()) : null
     };
-  } catch (e) {
-    return {
-      favicon: `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`,
-      ogImage: null,
-      title: null,
-      description: null,
-      cached: false,
-      fetchedAt: Date.now()
-    };
-  }
+  } catch (e) { return fallback; }
 }
 
-async function getCachedMetadata(url) {
-  return new Promise(resolve => {
-    chrome.storage.local.get(CACHE_KEY, result => {
-      const cache = result[CACHE_KEY] || {};
-      const entry = cache[url];
-      if (entry && (Date.now() - entry.fetchedAt) < CACHE_EXPIRY) {
-        resolve(entry);
-      } else {
-        resolve(null);
-      }
-    });
-  });
+function decodeHTMLEntities(text) {
+  return text.replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))
+             .replace(/&quot;/g, '"').replace(/&amp;/g, '&')
+             .replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 }
 
-async function cacheMetadata(url, metadata) {
-  return new Promise(resolve => {
-    chrome.storage.local.get(CACHE_KEY, result => {
-      const cache = result[CACHE_KEY] || {};
-      cache[url] = metadata;
-      // Limit cache size to 500 entries
-      const keys = Object.keys(cache);
-      if (keys.length > 500) {
-        keys.sort((a, b) => (cache[a].fetchedAt || 0) - (cache[b].fetchedAt || 0));
-        keys.slice(0, 50).forEach(k => delete cache[k]);
+async function saveAllTabsToFolder(name) {
+    const tabs = await chrome.tabs.query({ currentWindow: true });
+    // Root [0] Usually "Bookmarks"
+    // Children [1] Usually "Bookmarks Bar"
+    const root = await chrome.bookmarks.getTree();
+    
+    // Find Bookmarks Bar or Desktop bookmarks folder
+    const desktopFolder = root[0].children.find(c => c.id === '1' || c.title.toLowerCase().includes('bar')) || root[0].children[0];
+
+    const folder = await chrome.bookmarks.create({ parentId: desktopFolder.id, title: name || `Session (${new Date().toLocaleDateString()})` });
+    for (const tab of tabs) {
+      if (tab.url.startsWith('http')) {
+        await chrome.bookmarks.create({ parentId: folder.id, title: tab.title, url: tab.url });
       }
-      chrome.storage.local.set({ [CACHE_KEY]: cache }, resolve);
-    });
-  });
+    }
+}
+
+function getStorage(key) {
+  return new Promise(r => chrome.storage.local.get(key, res => r(res[key] || {})));
+}
+function setStorage(key, val) {
+  return new Promise(r => chrome.storage.local.set({ [key]: val }, r));
 }

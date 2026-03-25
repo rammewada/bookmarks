@@ -1,1225 +1,276 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bookmark Organizer</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&family=Geist:wght@300;400;500&display=swap"
-      rel="stylesheet"
-    />
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              geist: ["Geist", "-apple-system", "sans-serif"],
-              serif: ["Instrument Serif", "serif"],
-              mono: ["DM Mono", "monospace"],
-            },
-          },
-        },
-      };
-    </script>
-
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmark Organizer — Personal Link Library</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-      :root {
-        --ink: #0f0f0f;
-        --ink-2: #3a3a3a;
-        --ink-3: #6b6b6b;
-        --ink-4: #a0a0a0;
-        --surface: #fafaf8;
-        --surface-2: #f2f1ee;
-        --surface-3: #e8e6e1;
-        --border: #e0ddd7;
-        --border-strong: #c8c4bc;
-        --accent: #1a1a2e;
-        --card-bg: #ffffff;
-        --header-bg: rgba(250, 250, 248, 0.92);
-      }
-
-      /* ── Dark mode ── */
-      body.dark {
-        --ink: #f0ede8;
-        --ink-2: #c4bfb8;
-        --ink-3: #8a8680;
-        --ink-4: #5a5652;
-        --surface: #111110;
-        --surface-2: #1c1b19;
-        --surface-3: #272522;
-        --border: #2e2c29;
-        --border-strong: #403e3a;
-        --accent: #e8e4de;
-        --card-bg: #1c1b19;
-        --header-bg: rgba(17, 17, 16, 0.92);
-      }
-      body.dark .bm-card {
-        background: var(--card-bg);
-      }
-      body.dark .bm-card-list {
-        background: var(--card-bg);
-      }
-      body.dark .action-btn {
-        background: var(--surface-3);
-        color: var(--ink-3);
-        border-color: var(--border);
-      }
-      body.dark .action-btn:hover {
-        background: var(--accent);
-        color: var(--surface);
-        border-color: var(--accent);
-      }
-      body.dark .list-action-btn:hover {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: var(--surface);
-      }
-      body.dark .folder-chip.active {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: var(--surface);
-      }
-      body.dark #app-header {
-        background: var(--header-bg);
-      }
-      body.dark .card-visual-bg {
-        opacity: 0.7;
-      }
-      body.dark mark {
-        background: #7a6a1e;
-        color: var(--ink);
-      }
-      body.dark #btn-dark-toggle {
-        background: var(--surface-3);
-        border-color: var(--border);
-      }
-      body.dark #btn-view-grid {
-        background: var(--surface-3) !important;
-      }
-      body.dark #btn-view-list {
-        background: var(--surface-3) !important;
-      }
-      body.dark .modal-card {
-        background: var(--surface-2);
-      }
-      body.dark .skeleton-card {
-        background: var(--card-bg);
-      }
-      /* Fix card-favicon white-square in dark mode */
-      body.dark .card-favicon {
-        background: rgba(255, 255, 255, 0.08);
-        border-color: rgba(255, 255, 255, 0.12);
-      }
-      body.dark .card-actions {
-        background: var(--surface-2);
-      }
-
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-
-      body {
-        font-family:
-          "Geist",
-          -apple-system,
-          sans-serif;
-        background: var(--surface);
-        color: var(--ink);
-        min-height: 100vh;
-      }
-
-      /* Scrollbar */
-      ::-webkit-scrollbar {
-        width: 5px;
-        height: 5px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: var(--border-strong);
-        border-radius: 10px;
-      }
-
-      /* Doc label */
-      .label {
-        font-family: "DM Mono", monospace;
-        font-size: 10.5px;
-        font-weight: 500;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: var(--ink-4);
-      }
-
-      /* ── Header ── */
-      #app-header {
-        position: sticky;
-        top: 0;
-        z-index: 40;
-        background: rgba(250, 250, 248, 0.9);
-        backdrop-filter: blur(12px);
-        border-bottom: 1px solid var(--border);
-      }
-
-      /* ── Folder chips / filter bar ── */
-      #filter-bar {
-        overflow-x: auto;
-        scrollbar-width: none;
-      }
-      #filter-bar::-webkit-scrollbar {
-        display: none;
-      }
-
-      .folder-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 14px;
-        border-radius: 100px;
-        border: 1px solid var(--border);
-        background: transparent;
-        font-family: "Geist", sans-serif;
-        font-size: 13px;
-        font-weight: 500;
-        color: var(--ink-3);
-        cursor: pointer;
-        white-space: nowrap;
-        transition: all 0.15s ease;
-        flex-shrink: 0;
-      }
-      .folder-chip:hover {
-        border-color: var(--border-strong);
-        color: var(--ink);
-        background: var(--surface-2);
-      }
-      .folder-chip.active {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: white;
-      }
-      .folder-chip .chip-count {
-        font-family: "DM Mono", monospace;
-        font-size: 10px;
-        opacity: 0.65;
-      }
-
-      /* ── Bookmark Card ── */
-      .bm-card {
-        background: white;
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        overflow: hidden;
-        cursor: pointer;
-        transition:
-          transform 0.18s ease,
-          box-shadow 0.18s ease,
-          border-color 0.18s ease;
-        display: flex;
-        flex-direction: column;
-      }
-      .bm-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
-        border-color: var(--border-strong);
-      }
-
-      /* Card visual header */
-      .card-visual {
-        width: 100%;
-        height: 164px;
-        position: relative;
-        overflow: hidden;
-        flex-shrink: 0;
-        background: var(--surface-2);
-      }
-      .card-visual-bg {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .card-visual img.og-img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        position: absolute;
-        inset: 0;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-      }
-      .card-visual img.og-img.loaded {
-        opacity: 1;
-      }
-
-      .card-favicon {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        background: rgba(255, 255, 255, 0.25);
-        backdrop-filter: blur(4px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        position: relative;
-        z-index: 1;
-        transition: transform 0.2s ease;
-      }
-      .bm-card:hover .card-favicon {
-        transform: scale(1.08);
-      }
-      .card-favicon img {
-        width: 20px;
-        height: 20px;
-        border-radius: 4px;
-      }
-
-      /* Card body */
-      .card-body {
-        padding: 14px 16px 12px;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-      }
-      .card-title {
-        font-size: 13.5px;
-        font-weight: 500;
-        color: var(--ink);
-        line-height: 1.4;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        margin-bottom: 4px;
-      }
-      .card-domain {
-        font-family: "DM Mono", monospace;
-        font-size: 10.5px;
-        color: var(--ink-4);
-        letter-spacing: 0.04em;
-      }
-
-      /* Card actions (shown on hover) */
-      .card-actions {
-        display: flex;
-        gap: 6px;
-        padding: 10px 12px;
-        border-top: 1px solid var(--border);
-        background: var(--surface);
-        opacity: 0;
-        transform: translateY(4px);
-        transition:
-          opacity 0.15s ease,
-          transform 0.15s ease;
-      }
-      .bm-card:hover .card-actions {
-        opacity: 1;
-        transform: translateY(0);
-      }
-      .action-btn {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 5px;
-        padding: 6px 8px;
-        border-radius: 7px;
-        border: 1px solid var(--border);
-        background: white;
-        font-family: "Geist", sans-serif;
-        font-size: 11.5px;
-        font-weight: 500;
-        color: var(--ink-3);
-        cursor: pointer;
-        transition:
-          background 0.12s,
-          border-color 0.12s,
-          color 0.12s;
-      }
-      .action-btn:hover {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: white;
-      }
-      .action-btn svg {
-        flex-shrink: 0;
-      }
-
-      /* ── List view card ── */
-      .bm-card-list {
-        background: white;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 14px 16px;
-        cursor: pointer;
-        transition:
-          transform 0.15s,
-          box-shadow 0.15s,
-          border-color 0.15s;
-      }
-      .bm-card-list:hover {
-        transform: translateX(3px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-        border-color: var(--border-strong);
-      }
-      .list-favicon-box {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        border: 1px solid var(--border);
-      }
-      .list-favicon-box img {
-        width: 20px;
-        height: 20px;
-        border-radius: 4px;
-      }
-      .list-info {
-        flex: 1;
-        min-width: 0;
-      }
-      .list-title {
-        font-size: 13.5px;
-        font-weight: 500;
-        color: var(--ink);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .list-domain {
-        font-family: "DM Mono", monospace;
-        font-size: 10.5px;
-        color: var(--ink-4);
-        margin-top: 2px;
-      }
-      .list-actions {
-        display: flex;
-        gap: 5px;
-        flex-shrink: 0;
-      }
-      .list-action-btn {
-        padding: 6px 10px;
-        border-radius: 7px;
-        border: 1px solid var(--border);
-        background: var(--surface-2);
-        font-size: 11.5px;
-        font-weight: 500;
-        color: var(--ink-3);
-        cursor: pointer;
-        font-family: "Geist", sans-serif;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        transition:
-          background 0.12s,
-          border-color 0.12s;
-        white-space: nowrap;
-      }
-      .list-action-btn:hover {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: white;
-      }
-
-      /* ── Section heading ── */
-      .section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 20px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid var(--border);
-      }
-      .section-folder-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 14px;
-        border-radius: 100px;
-        border: 1px solid transparent;
-        background: transparent;
-        cursor: pointer;
-        transition:
-          background 0.12s,
-          border-color 0.12s;
-      }
-      .section-folder-btn:hover {
-        background: var(--surface-3);
-        border-color: var(--border);
-      }
-
-      /* ── Share folder modal ── */
-      #share-modal {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 15, 15, 0.45);
-        backdrop-filter: blur(6px);
-        z-index: 200;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-      }
-      #share-modal.open {
-        display: flex;
-      }
-
-      .modal-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        width: 100%;
-        max-width: 520px;
-        max-height: 80vh;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 32px 80px rgba(0, 0, 0, 0.16);
-        animation: modalIn 0.2s ease;
-      }
-      @keyframes modalIn {
-        from {
-          opacity: 0;
-          transform: scale(0.96) translateY(8px);
+        :root {
+            --surface: #fafafa; --surface-sub: #f2f2f2; --surface-thick: #e8e8e8;
+            --ink: #111; --ink-dim: #666; --ink-fade: #aaa;
+            --accent: #111; --accent-light: #333;
+            --border: #e0e0e0; --border-strong: #ccc;
+            --folder-bg: #f9f9f9; --card-bg: #fff;
+            --shadow: 0 4px 20px rgba(0,0,0,0.05);
+            --transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            --radius: 12px;
+            --red: #ff4d4d; --amber: #ffbf00; --green: #2ecc71;
         }
-        to {
-          opacity: 1;
-          transform: scale(1) translateY(0);
+
+        body.dark {
+            --surface: #0a0a0a; --surface-sub: #141414; --surface-thick: #1f1f1f;
+            --ink: #fff; --ink-dim: #999; --ink-fade: #444;
+            --accent: #fff; --accent-light: #eee;
+            --border: #222; --border-strong: #333;
+            --folder-bg: #111; --card-bg: #111;
+            --shadow: 0 8px 32px rgba(0,0,0,0.4);
+            --red: #ff6b6b; --amber: #ffd93d; --green: #6bc11f;
         }
-      }
-      .modal-header {
-        padding: 24px 24px 0;
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        flex-shrink: 0;
-      }
-      .modal-body {
-        padding: 20px 24px 24px;
-        overflow-y: auto;
-        flex: 1;
-      }
-      .modal-close-btn {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        border: 1px solid var(--border);
-        background: var(--surface-2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        flex-shrink: 0;
-        transition: background 0.12s;
-      }
-      .modal-close-btn:hover {
-        background: var(--surface-3);
-      }
 
-      /* ── Toast ── */
-      #toast {
-        position: fixed;
-        bottom: 28px;
-        left: 50%;
-        transform: translateX(-50%) translateY(20px);
-        background: var(--accent);
-        color: white;
-        padding: 10px 22px;
-        border-radius: 100px;
-        font-family: "Geist", sans-serif;
-        font-size: 13px;
-        font-weight: 500;
-        z-index: 999;
-        opacity: 0;
-        transition:
-          transform 0.22s ease,
-          opacity 0.22s ease;
-        pointer-events: none;
-        white-space: nowrap;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-      }
-      #toast.show {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-      }
-
-      /* ── Loading skeleton ── */
-      .skeleton-card {
-        background: white;
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        overflow: hidden;
-      }
-      .skeleton-block {
-        background: linear-gradient(
-          90deg,
-          var(--surface-2) 25%,
-          var(--surface-3) 50%,
-          var(--surface-2) 75%
-        );
-        background-size: 200% 100%;
-        animation: shimmer 1.4s infinite;
-      }
-      @keyframes shimmer {
-        0% {
-          background-position: 200% 0;
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--surface); color: var(--ink);
+            font-family: 'Inter', system-ui; height: 100vh;
+            overflow: hidden; display: flex; transition: background 0.3s;
         }
-        100% {
-          background-position: -200% 0;
+
+        /* ── Sidebar ── */
+        aside {
+            width: 280px; height: 100%; background: var(--surface-sub);
+            border-right: 1px solid var(--border); display: flex; flex-direction: column;
+            overflow-y: hidden; flex-shrink: 0;
         }
-      }
 
-      /* ── Fade in ── */
-      @keyframes fadeUp {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
+        .aside-inner { padding: 24px 16px; overflow-y: auto; flex: 1; }
+
+        h1 { font-family: 'Instrument Serif', serif; font-size: 24px; font-weight: 400; margin-bottom: 24px; padding: 0 8px; cursor: default; }
+
+        .nav-section { margin-bottom: 24px; }
+        .nav-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-fade); margin-bottom: 12px; padding: 0 8px; }
+
+        .nav-item {
+            width: 100%; padding: 8px 12px; border-radius: 8px; font-size: 13.2px;
+            display: flex; align-items: center; gap: 10px; cursor: pointer;
+            transition: var(--transition); color: var(--ink-dim); border: none;
+            background: transparent; text-align: left; position: relative;
         }
-        to {
-          opacity: 1;
-          transform: translateY(0);
+        .nav-item:hover { background: var(--surface-thick); color: var(--ink); }
+        .nav-item.active { background: var(--accent); color: var(--surface); }
+        .nav-item .count { margin-left: auto; opacity: 0.5; font-size: 10px; font-family: 'JetBrains Mono'; }
+
+        /* Folders Tree */
+        .folder-row { display: flex; align-items: center; width: 100%; cursor: pointer; border-radius: 6px; transition: var(--transition); position: relative; font-size: 13px; color: var(--ink-dim); }
+        .folder-row:hover { background: var(--surface-thick); }
+        .folder-row.active { background: var(--surface-thick); color: var(--ink); font-weight: 500; }
+        .folder-row.drag-over { background: var(--accent); color: var(--surface); }
+        .folder-content { flex: 1; padding: 6px 4px; display: flex; align-items: center; gap: 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .folder-arrow { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; opacity: 0.5; }
+        .folder-arrow.expanded { transform: rotate(90deg); }
+        .folder-children { display: none; margin-left: 12px; border-left: 1px solid var(--border); padding-left: 4px; }
+        .folder-children.visible { display: block; }
+
+        /* ── Main content ── */
+        main { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--surface); position: relative; }
+
+        header {
+            padding: 24px 40px; border-bottom: 1px solid var(--border);
+            display: flex; gap: 20px; align-items: center; background: var(--surface);
+            z-index: 10;
         }
-      }
-      .fade-up {
-        animation: fadeUp 0.28s ease both;
-      }
 
-      /* ── Grid ── */
-      .bm-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 14px;
-      }
+        .search { flex: 1; position: relative; max-width: 600px; }
+        .search input {
+            width: 100%; padding: 10px 16px 10px 42px; border-radius: 10px;
+            border: 1px solid var(--border); background: var(--surface-sub);
+            color: var(--ink); font-size: 14px; outline: none; transition: var(--transition);
+        }
+        .search input:focus { border-color: var(--ink-dim); background: var(--card-bg); box-shadow: 0 0 0 3px rgba(0,0,0,0.03); }
+        .search-icon { position: absolute; left: 14px; top: 11px; opacity: 0.4; }
 
-      /* Highlight for search */
-      mark {
-        background: #fef3a0;
-        border-radius: 2px;
-        padding: 0 2px;
-        color: inherit;
-      }
+        .toolbar { display: flex; align-items: center; gap: 8px; }
+        .btn {
+            background: var(--surface-sub); border: 1px solid var(--border);
+            padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 13px;
+            color: var(--ink-dim); display: flex; align-items: center; gap: 6px;
+            transition: var(--transition);
+        }
+        .btn:hover { background: var(--surface-thick); color: var(--ink); }
+        .btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
 
-      /* Search clear btn */
-      #search-clear {
-        display: none;
-      }
-      #search-input:not(:placeholder-shown) + #search-clear {
-        display: flex;
-      }
+        #container { flex: 1; overflow-y: scroll; padding: 40px; scroll-behavior: smooth; }
 
-      /* Smooth section transitions */
-      .bm-section {
-        animation: fadeUp 0.25s ease both;
-      }
+        .group-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 12px;
+            margin-top: 52px;
+        }
+        .group-header:first-child { margin-top: 0; }
+        .group-title { font-family: 'Instrument Serif'; font-size: 24px; color: var(--ink); display: flex; align-items: center; gap: 10px; }
+
+        /* ── Content Grid ── */
+        #content { display: grid; gap: 20px; }
+        #content.grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+        #content.list { grid-template-columns: 1fr; gap: 8px; }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: var(--radius); overflow: hidden; display: flex;
+            flex-direction: column; transition: var(--transition); position: relative;
+            cursor: pointer;
+        }
+        .card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--border-strong); }
+        .card.dragging { opacity: 0.5; transform: scale(0.95); }
+        .card.broken { border-color: var(--red); }
+        
+        .visual { height: 160px; background: var(--surface-sub); position: relative; }
+        .visual img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.4s; }
+        .visual img.loaded { opacity: 1; }
+        .favicon-overlay { position: absolute; bottom: 12px; left: 12px; width: 32px; height: 32px; background: rgba(255,255,255,0.9); border-radius: 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .favicon-overlay img { width: 18px; height: 18px; opacity: 1; }
+
+        .card-actions {
+            position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; opacity: 0; transition: var(--transition); z-index: 5;
+        }
+        .card:hover .card-actions { opacity: 1; }
+        .action-circle {
+            width: 32px; height: 32px; border-radius: 50%; background: #fff; color: #111;
+            display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.12); border: none; cursor: pointer;
+        }
+        .action-circle:hover { background: #f0f0f0; }
+        .action-circle.btn-pin.active { background: var(--amber); }
+
+        .details { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .c-title { font-size: 14.5px; font-weight: 500; line-height: 1.4; color: var(--ink); }
+        .c-meta { font-size: 11px; color: var(--ink-fade); font-family: 'JetBrains Mono'; }
+
+        /* List View Styles (Row based, No images) */
+        #content.list .card { flex-direction: row; align-items: center; height: 64px; }
+        #content.list .card .visual { display: none; }
+        #content.list .card .details { padding: 0 16px; flex-direction: row; align-items: center; gap: 16px; }
+        #content.list .card .c-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #content.list .card .card-actions { position: static; opacity: 1; padding-right: 16px; background: transparent; box-shadow: none; }
+        #content.list .card .action-circle { background: var(--surface-sub); box-shadow: none; width: 28px; height: 28px; }
+
+        /* ── Modals ── */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+            display: none; align-items: center; justify-content: center; z-index: 100;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--card-bg); width: 100%; max-width: 520px; border-radius: 18px;
+            padding: 32px; animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); max-height: 90vh; overflow-y: auto;
+        }
+
+        #toast {
+            position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(100px); 
+            background: var(--ink); color: var(--surface); padding: 12px 24px; border-radius: 100px; font-size: 13px; z-index: 1000; transition: var(--transition); opacity: 0;
+        }
+        #toast.active { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+        select, input, textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-sub); color: var(--ink); outline: none; transition: border-color 0.2s; }
+        select:focus, input:focus, textarea:focus { border-color: var(--ink-dim); }
     </style>
-  </head>
-  <body>
-    <!-- Toast -->
-    <div id="toast"></div>
+</head>
+<body>
+    <aside>
+        <div class="aside-inner">
+            <h1>Library.</h1>
+            
+            <div class="nav-section">
+                <span class="nav-label">Main</span>
+                <button class="nav-item active" id="nav-all" data-id="all" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'all')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    All Bookmarks <span class="count" id="count-all">0</span>
+                </button>
+                <button class="nav-item" id="nav-pinned" data-id="pinned">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    Pinned
+                </button>
+                <button class="nav-item" id="nav-broken" style="color: var(--red);" data-id="broken">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    Broken <span class="count" id="count-broken">0</span>
+                </button>
+            </div>
 
-    <!-- Share Modal -->
-    <div id="share-modal" aria-modal="true" role="dialog">
-      <div class="modal-card">
-        <div class="modal-header">
-          <div>
-            <h2
-              id="modal-title"
-              class="font-serif text-xl"
-              style="color: var(--ink)"
-            >
-              Share
-            </h2>
-            <p id="modal-subtitle" class="label mt-1"></p>
-          </div>
-          <button id="modal-close" class="modal-close-btn" title="Close">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path
-                d="M1 1l10 10M11 1L1 11"
-                stroke="#6b6b6b"
-                stroke-width="1.5"
-                stroke-linecap="round"
-              />
-            </svg>
-          </button>
+            <div class="nav-section">
+                <span class="nav-label">Folders</span>
+                <div id="folder-sidebar"></div>
+            </div>
+
+            <div class="nav-section">
+                <span class="nav-label">Favorites</span>
+                <div id="tag-list" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 0 4px;"></div>
+            </div>
         </div>
 
-        <div class="modal-body">
-          <!-- Single bookmark share -->
-          <div id="modal-single">
-            <div
-              style="
-                background: var(--surface-2);
-                border: 1px solid var(--border);
-                border-radius: 10px;
-                padding: 12px 14px;
-              "
-              class="mb-4"
-            >
-              <div
-                id="modal-bm-title"
-                style="
-                  font-size: 14px;
-                  font-weight: 500;
-                  color: var(--ink);
-                  margin-bottom: 4px;
-                "
-              ></div>
-              <div
-                id="modal-bm-url"
-                class="label"
-                style="word-break: break-all"
-              ></div>
-            </div>
-            <div
-              style="
-                display: flex;
-                gap: 6px;
-                margin-bottom: 16px;
-                margin-top: 4px;
-              "
-            >
-              <input
-                id="modal-url-input"
-                readonly
-                type="text"
-                style="
-                  flex: 1;
-                  background: var(--surface-2);
-                  border: 1px solid var(--border);
-                  border-radius: 8px;
-                  padding: 8px 12px;
-                  font-family: &quot;DM Mono&quot;, monospace;
-                  font-size: 12px;
-                  color: var(--ink);
-                  outline: none;
-                "
-              />
-              <button
-                id="modal-copy-url"
-                style="
-                  background: var(--accent);
-                  color: var(--surface);
-                  border: none;
-                  border-radius: 8px;
-                  padding: 8px 16px;
-                  font-family: &quot;Geist&quot;, sans-serif;
-                  font-size: 13px;
-                  font-weight: 500;
-                  cursor: pointer;
-                  white-space: nowrap;
-                "
-              >
-                Copy URL
-              </button>
-            </div>
-            <div class="label mb-3">Share to platform</div>
-            <div
-              style="display: flex; gap: 8px; flex-wrap: wrap"
-              id="share-platforms"
-            ></div>
-          </div>
-
-          <!-- Folder share -->
-          <div id="modal-folder" style="display: none">
-            <div class="label mb-3">All links in this folder</div>
-            <div
-              style="
-                background: var(--surface-2);
-                border: 1px solid var(--border);
-                border-radius: 10px;
-                overflow: hidden;
-                margin-bottom: 14px;
-              "
-            >
-              <textarea
-                id="modal-folder-text"
-                readonly
-                style="
-                  width: 100%;
-                  padding: 14px;
-                  font-family: &quot;DM Mono&quot;, monospace;
-                  font-size: 11.5px;
-                  color: var(--ink-3);
-                  background: transparent;
-                  border: none;
-                  outline: none;
-                  resize: none;
-                  line-height: 1.7;
-                  min-height: 180px;
-                  max-height: 300px;
-                "
-              ></textarea>
-            </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap">
-              <button
-                id="modal-copy-folder"
-                style="
-                  background: var(--accent);
-                  color: var(--surface);
-                  border: none;
-                  border-radius: 8px;
-                  padding: 9px 18px;
-                  font-family: &quot;Geist&quot;, sans-serif;
-                  font-size: 13px;
-                  font-weight: 500;
-                  cursor: pointer;
-                "
-              >
-                Copy all links
-              </button>
-              <button
-                id="modal-share-folder-email"
-                style="
-                  background: var(--surface-2);
-                  color: var(--ink-3);
-                  border: 1px solid var(--border);
-                  border-radius: 8px;
-                  padding: 9px 18px;
-                  font-family: &quot;Geist&quot;, sans-serif;
-                  font-size: 13px;
-                  font-weight: 500;
-                  cursor: pointer;
-                "
-              >
-                Share via Email
-              </button>
-            </div>
-          </div>
+        <div style="padding: 16px; border-top: 1px solid var(--border); display: flex; gap: 8px;">
+            <button class="btn theme-toggle-btn" id="btn-dark-toggle" title="Toggle Theme">
+                <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.77" x2="5.64" y2="18.35"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </button>
+            <button class="btn" id="btn-export-all" style="flex:1">Export Backup</button>
         </div>
-      </div>
+    </aside>
+
+    <main>
+        <header>
+            <div class="search">
+                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="search-input" placeholder="Search title, URL, tags...">
+            </div>
+            
+            <div class="toolbar">
+                <div class="btn-group" style="display: flex; gap: 4px; background: var(--surface-sub); padding: 4px; border-radius: 10px; border: 1px solid var(--border);">
+                    <button class="btn" id="view-grid"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>
+                    <button class="btn" id="view-list"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+                </div>
+                <button class="btn btn-primary" id="btn-save-tabs">Capture Tabs</button>
+            </div>
+        </header>
+
+        <section id="container">
+            <div id="content" class="grid"></div>
+        </section>
+    </main>
+
+    <div class="modal-overlay" id="edit-modal">
+        <div class="modal">
+            <h2 id="modal-title" style="margin-bottom: 24px; font-family: 'Instrument Serif'; font-size: 28px;">Edit Link</h2>
+            <form id="edit-form">
+                <div style="margin-bottom: 16px;"><label style="display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">Title</label><input type="text" id="edit-title" required></div>
+                <div style="margin-bottom: 16px;"><label style="display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">URL</label><input type="text" id="edit-url" required></div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px; display: flex; justify-content: space-between;">
+                        Folder
+                        <button type="button" id="btn-new-folder" style="background: none; border: none; font-size: 10px; color: var(--green); cursor: pointer; font-weight: 700;">+ NEW FOLDER</button>
+                    </label>
+                    <select id="edit-folder" required></select>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">Tags</label>
+                    <input type="text" id="edit-tags" list="tag-suggestions" placeholder="comma separated...">
+                    <datalist id="tag-suggestions"></datalist>
+                </div>
+
+                <div style="margin-bottom: 24px;"><label style="display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">Notes</label><textarea id="edit-notes" style="height: 70px;"></textarea></div>
+                
+                <div style="display: flex; gap: 12px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Save Changes</button>
+                    <button type="button" class="btn" id="modal-cancel">Cancel</button>
+                    <button type="button" class="btn" id="btn-delete" style="color: var(--red);">Delete</button>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <!-- App -->
-    <div id="app">
-      <!-- Header -->
-      <header id="app-header">
-        <div style="max-width: 1440px; margin: 0 auto; padding: 0 32px">
-          <div
-            style="display: flex; align-items: center; gap: 20px; height: 64px"
-          >
-            <!-- Logo -->
-            <div
-              style="
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                flex-shrink: 0;
-              "
-            >
-              <div
-                style="
-                  width: 30px;
-                  height: 30px;
-                  background: var(--accent);
-                  border-radius: 8px;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                "
-              >
-                <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                  <path
-                    d="M3 2h10a1 1 0 011 1v10l-2.5-1.5L9 13l-1.5-1.5L6 13l-2.5-1.5L1 13V3a1 1 0 011-1z"
-                    fill="none"
-                    stroke="var(--surface)"
-                    stroke-width="1.3"
-                    stroke-linejoin="round"
-                  />
-                  <path
-                    d="M5 6.5h6M5 9.5h4"
-                    stroke="var(--surface)"
-                    stroke-width="1.2"
-                    stroke-linecap="round"
-                  />
-                </svg>
-              </div>
-              <span
-                class="font-serif"
-                style="
-                  font-size: 17px;
-                  color: var(--ink);
-                  letter-spacing: -0.01em;
-                "
-                >Bookmarks</span
-              >
-            </div>
-
-            <!-- Search -->
-            <div style="flex: 1; max-width: 420px; position: relative">
-              <svg
-                style="
-                  position: absolute;
-                  left: 12px;
-                  top: 50%;
-                  transform: translateY(-50%);
-                "
-                width="14"
-                height="14"
-                viewBox="0 0 14 14"
-                fill="none"
-              >
-                <circle
-                  cx="6"
-                  cy="6"
-                  r="4.5"
-                  stroke="#a0a0a0"
-                  stroke-width="1.3"
-                />
-                <path
-                  d="M10 10l3 3"
-                  stroke="#a0a0a0"
-                  stroke-width="1.3"
-                  stroke-linecap="round"
-                />
-              </svg>
-              <input
-                id="search-input"
-                type="text"
-                placeholder="Search all bookmarks..."
-                style="
-                  width: 100%;
-                  background: var(--surface-2);
-                  border: 1px solid var(--border);
-                  border-radius: 10px;
-                  padding: 9px 36px 9px 36px;
-                  font-family: &quot;Geist&quot;, sans-serif;
-                  font-size: 13.5px;
-                  color: var(--ink);
-                  outline: none;
-                  transition: border-color 0.15s;
-                "
-                onfocus="this.style.borderColor = 'var(--accent)'"
-                onblur="this.style.borderColor = 'var(--border)'"
-              />
-              <button
-                id="search-clear"
-                title="Clear search"
-                style="
-                  position: absolute;
-                  right: 10px;
-                  top: 50%;
-                  transform: translateY(-50%);
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  width: 20px;
-                  height: 20px;
-                  border-radius: 50%;
-                  background: var(--surface-3);
-                  border: none;
-                  cursor: pointer;
-                "
-              >
-                <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                  <path
-                    d="M1 1l7 7M8 1L1 8"
-                    stroke="#6b6b6b"
-                    stroke-width="1.3"
-                    stroke-linecap="round"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <div style="flex: 1"></div>
-
-            <!-- Controls -->
-            <div
-              style="
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                flex-shrink: 0;
-              "
-            >
-              <!-- Total count -->
-              <span class="label" id="header-count"></span>
-
-              <!-- View toggle -->
-              <div
-                style="
-                  display: flex;
-                  background: var(--surface-2);
-                  border: 1px solid var(--border);
-                  border-radius: 8px;
-                  padding: 3px;
-                  gap: 2px;
-                "
-              >
-                <button
-                  id="btn-view-grid"
-                  title="Grid view"
-                  style="
-                    padding: 5px 8px;
-                    border-radius: 5px;
-                    border: none;
-                    background: white;
-                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                  "
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <rect
-                      x="1"
-                      y="1"
-                      width="5"
-                      height="5"
-                      rx="1.2"
-                      fill="var(--ink-2)"
-                    />
-                    <rect
-                      x="8"
-                      y="1"
-                      width="5"
-                      height="5"
-                      rx="1.2"
-                      fill="var(--ink-2)"
-                    />
-                    <rect
-                      x="1"
-                      y="8"
-                      width="5"
-                      height="5"
-                      rx="1.2"
-                      fill="var(--ink-2)"
-                    />
-                    <rect
-                      x="8"
-                      y="8"
-                      width="5"
-                      height="5"
-                      rx="1.2"
-                      fill="var(--ink-2)"
-                    />
-                  </svg>
-                </button>
-                <button
-                  id="btn-view-list"
-                  title="List view"
-                  style="
-                    padding: 5px 8px;
-                    border-radius: 5px;
-                    border: none;
-                    background: transparent;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                  "
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path
-                      d="M1 3.5h12M1 7h12M1 10.5h12"
-                      stroke="var(--ink-4)"
-                      stroke-width="1.4"
-                      stroke-linecap="round"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              <!-- Sort -->
-              <select
-                id="sort-sel"
-                style="
-                  background: var(--surface-2);
-                  border: 1px solid var(--border);
-                  border-radius: 8px;
-                  padding: 7px 12px;
-                  font-family: &quot;Geist&quot;, sans-serif;
-                  font-size: 12.5px;
-                  color: var(--ink-3);
-                  outline: none;
-                  cursor: pointer;
-                "
-              >
-                <option value="default">Default</option>
-                <option value="az">A → Z</option>
-                <option value="za">Z → A</option>
-              </select>
-
-              <!-- Dark mode toggle -->
-              <button
-                id="btn-dark-toggle"
-                title="Toggle dark mode"
-                style="
-                  width: 36px;
-                  height: 36px;
-                  border-radius: 8px;
-                  border: 1px solid var(--border);
-                  background: var(--surface-2);
-                  cursor: pointer;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  transition:
-                    background 0.15s,
-                    border-color 0.15s;
-                  flex-shrink: 0;
-                "
-              >
-                <svg
-                  id="icon-sun"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  style="display: none"
-                >
-                  <circle
-                    cx="8"
-                    cy="8"
-                    r="3"
-                    stroke="var(--ink-3)"
-                    stroke-width="1.3"
-                  />
-                  <path
-                    d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.1 3.1l1.06 1.06M11.84 11.84l1.06 1.06M3.1 12.9l1.06-1.06M11.84 4.16l1.06-1.06"
-                    stroke="var(--ink-3)"
-                    stroke-width="1.3"
-                    stroke-linecap="round"
-                  />
-                </svg>
-                <svg
-                  id="icon-moon"
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <path
-                    d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
-                    stroke="var(--ink-3)"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- Filter chips -->
-          <div
-            id="filter-bar"
-            style="
-              display: flex;
-              gap: 8px;
-              padding: 12px 0;
-              align-items: center;
-            "
-          >
-            <!-- Populated by JS -->
-          </div>
-        </div>
-      </header>
-
-      <!-- Main -->
-      <main
-        style="max-width: 1440px; margin: 0 auto; padding: 40px 32px 80px"
-        id="main"
-      >
-        <!-- Loading -->
-        <div
-          id="state-loading"
-          style="
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 100px 0;
-            gap: 16px;
-          "
-        >
-          <div
-            style="
-              width: 36px;
-              height: 36px;
-              border: 2px solid var(--border);
-              border-top-color: var(--accent);
-              border-radius: 50%;
-              animation: spin 0.8s linear infinite;
-            "
-          ></div>
-          <span class="label">Loading your bookmarks…</span>
-        </div>
-        <style>
-          @keyframes spin {
-            to {
-              transform: rotate(360deg);
-            }
-          }
-        </style>
-
-        <!-- No results -->
-        <div
-          id="state-empty"
-          style="
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 100px 0;
-            text-align: center;
-            gap: 12px;
-          "
-        >
-          <div
-            style="
-              width: 56px;
-              height: 56px;
-              border-radius: 50%;
-              background: var(--surface-3);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              margin-bottom: 8px;
-            "
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M5 4h14a1 1 0 011 1v14l-4-2.5L13 18l-2-1.5L9 18l-4-2.5V5a1 1 0 011-1z"
-                stroke="var(--ink-4)"
-                stroke-width="1.4"
-              />
-              <path
-                d="M9 10h6M9 13h4"
-                stroke="var(--ink-4)"
-                stroke-width="1.4"
-                stroke-linecap="round"
-              />
-            </svg>
-          </div>
-          <h3 class="font-serif" style="font-size: 18px; color: var(--ink)">
-            Nothing here
-          </h3>
-          <p style="font-size: 13.5px; color: var(--ink-4); max-width: 280px">
-            No bookmarks match your search or this folder is empty.
-          </p>
-        </div>
-
-        <!-- Content -->
-        <div id="content"></div>
-      </main>
-    </div>
+    <div id="toast">Saved</div>
 
     <script src="newtab.js"></script>
-  </body>
+</body>
 </html>

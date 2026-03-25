@@ -1,13 +1,16 @@
 {
   "manifest_version": 3,
   "name": "Bookmark Organizer",
-  "version": "1.0.0",
-  "description": "Beautifully organize, view, and share your bookmarks with rich metadata previews.",
+  "version": "2.0.0",
+  "description": "Premium bookmark organizer with tags, notes, search commands, and link health tracking.",
   "permissions": [
     "bookmarks",
     "storage",
     "tabs",
-    "favicon"
+    "favicon",
+    "sessions",
+    "history",
+    "contextMenus"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -33,8 +36,13 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["newtab.html", "icons/*"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "newtab.html",
+        "icons/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ]
 }
