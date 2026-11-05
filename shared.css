@@ -1,0 +1,158 @@
+/* shared.css — design tokens + shared components (popup & library) */
+
+:root {
+  color-scheme: light;
+  --surface: #fafafa;
+  --surface-sub: #f2f2f2;
+  --surface-thick: #e8e8e8;
+  --card-bg: #ffffff;
+  --ink: #111111;
+  --ink-dim: #5f5f5f;
+  --ink-fade: #9a9a9a;
+  --accent: #111111;
+  --accent-ink: #ffffff;
+  --border: #e3e3e3;
+  --border-strong: #cfcfcf;
+  --focus: #1a73e8;
+  --red: #d93025;
+  --red-bg: rgba(217, 48, 37, 0.08);
+  --amber: #f2a900;
+  --green: #188038;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --shadow-pop: 0 12px 40px rgba(0, 0, 0, 0.16);
+  --radius: 12px;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+    --surface: #0b0b0c;
+    --surface-sub: #151517;
+    --surface-thick: #222225;
+    --card-bg: #121214;
+    --ink: #f4f4f5;
+    --ink-dim: #a1a1aa;
+    --ink-fade: #5c5c63;
+    --accent: #f4f4f5;
+    --accent-ink: #0b0b0c;
+    --border: #232327;
+    --border-strong: #34343a;
+    --focus: #8ab4f8;
+    --red: #f28b82;
+    --red-bg: rgba(242, 139, 130, 0.1);
+    --amber: #fdd663;
+    --green: #81c995;
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    --shadow-pop: 0 16px 48px rgba(0, 0, 0, 0.6);
+  }
+}
+
+:root.dark {
+  color-scheme: dark;
+  --surface: #0b0b0c;
+  --surface-sub: #151517;
+  --surface-thick: #222225;
+  --card-bg: #121214;
+  --ink: #f4f4f5;
+  --ink-dim: #a1a1aa;
+  --ink-fade: #5c5c63;
+  --accent: #f4f4f5;
+  --accent-ink: #0b0b0c;
+  --border: #232327;
+  --border-strong: #34343a;
+  --focus: #8ab4f8;
+  --red: #f28b82;
+  --red-bg: rgba(242, 139, 130, 0.1);
+  --amber: #fdd663;
+  --green: #81c995;
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-pop: 0 16px 48px rgba(0, 0, 0, 0.6);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ── Form fields ── */
+.field { display: block; margin-bottom: 14px; }
+.field-label, .field > span:first-child {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--ink-dim); margin-bottom: 6px;
+}
+.input, .field input[type="text"], .field input:not([type]), .field textarea, .field select, .select {
+  width: 100%; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface-sub); color: var(--ink); font: inherit; font-size: 13.5px; outline: none;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.field textarea { resize: vertical; min-height: 56px; line-height: 1.45; }
+.input:focus, .field input:focus, .field textarea:focus, .field select:focus, .select:focus {
+  border-color: var(--focus); background: var(--card-bg); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 18%, transparent);
+}
+.link-btn {
+  background: none; border: none; padding: 0; font: inherit; font-size: 11px; font-weight: 600;
+  color: var(--focus); cursor: pointer; text-transform: none; letter-spacing: 0;
+}
+.link-btn:hover { text-decoration: underline; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface-sub); color: var(--ink); font: inherit; font-size: 13px; font-weight: 500;
+  cursor: pointer; white-space: nowrap; transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+}
+.btn:hover { background: var(--surface-thick); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn-primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent); opacity: 0.88; }
+.btn-danger { color: var(--red); }
+.btn-danger:hover { background: var(--red-bg); border-color: var(--red); }
+.btn-ghost { background: transparent; border-color: transparent; }
+.btn-ghost:hover { background: var(--surface-thick); }
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex-shrink: 0;
+  border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--ink-dim); cursor: pointer;
+}
+.icon-btn:hover { background: var(--surface-thick); color: var(--ink); }
+
+kbd {
+  font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10.5px; padding: 1px 5px;
+  border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 4px; color: var(--ink-dim); background: var(--card-bg);
+}
+
+/* ── Tag input ── */
+.tag-input {
+  position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+  min-height: 38px; padding: 4px 6px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface-sub); cursor: text; transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.tag-input:focus-within { border-color: var(--focus); background: var(--card-bg); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 18%, transparent); }
+.ti-chips { display: contents; }
+.ti-chip {
+  display: inline-flex; align-items: center; gap: 2px; padding: 2px 4px 2px 8px; border-radius: 6px;
+  background: var(--surface-thick); color: var(--ink); font-size: 12px; font-weight: 500;
+}
+.ti-chip button {
+  border: none; background: none; color: var(--ink-fade); cursor: pointer; font-size: 14px; line-height: 1;
+  padding: 0 3px; border-radius: 4px;
+}
+.ti-chip button:hover { color: var(--ink); background: var(--border); }
+.ti-field {
+  flex: 1; min-width: 80px; width: auto !important; border: none !important; outline: none; background: transparent !important;
+  box-shadow: none !important; padding: 4px !important; font: inherit; font-size: 13.5px; color: var(--ink);
+}
+.ti-menu {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 50; padding: 4px;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-pop);
+}
+.ti-option { padding: 6px 8px; border-radius: 6px; font-size: 13px; cursor: pointer; color: var(--ink); }
+.ti-option:hover, .ti-option.active { background: var(--surface-thick); }
+
+.quick-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.quick-tag {
+  padding: 2px 8px; border-radius: 999px; font: inherit; font-size: 11.5px; font-weight: 500;
+  border: 1px dashed var(--border-strong); background: transparent; color: var(--ink-dim); cursor: pointer;
+}
+.quick-tag:hover { border-style: solid; color: var(--ink); }

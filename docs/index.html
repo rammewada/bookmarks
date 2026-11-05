@@ -1,0 +1,446 @@
+<title>Bookmark Organizer Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="How to install and use Bookmark Organizer, a Chrome extension for saving, tagging and cleaning up bookmarks.">
+<link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: sticky contents rail on the left, a 70ch reading column, screenshots break wider. */
+  :root {
+    --bg: #fbfbfd;
+    --surface: #f1f2f7;
+    --card: #ffffff;
+    --ink: #15182b;
+    --ink-dim: #565b75;
+    --ink-fade: #8a8fa8;
+    --line: #e1e3ec;
+    --navy: #232849;
+    --accent: #1f9d5f;
+    --accent-soft: #e3f5ec;
+    --link: #2f55d4;
+    --warn-soft: #fff6dc;
+    --warn-ink: #7a5a00;
+    --shadow: 0 1px 2px rgba(21, 24, 43, 0.06), 0 12px 32px rgba(21, 24, 43, 0.08);
+    --display: "Instrument Serif", Georgia, "Times New Roman", serif;
+    --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d0e15; --surface: #161824; --card: #12131c; --ink: #eef0f8; --ink-dim: #a6aac2; --ink-fade: #6d7290;
+      --line: #252838; --navy: #c9cff5; --accent: #4fd08f; --accent-soft: #11291e; --link: #8fa8ff;
+      --warn-soft: #2a2310; --warn-ink: #f1d27a; --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 12px 32px rgba(0,0,0,0.45);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d0e15; --surface: #161824; --card: #12131c; --ink: #eef0f8; --ink-dim: #a6aac2; --ink-fade: #6d7290;
+    --line: #252838; --navy: #c9cff5; --accent: #4fd08f; --accent-soft: #11291e; --link: #8fa8ff;
+    --warn-soft: #2a2310; --warn-ink: #f1d27a; --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 12px 32px rgba(0,0,0,0.45);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.65 var(--body);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  a { color: var(--link); text-underline-offset: 3px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 4px; }
+
+  .shell { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 56px; padding-block: 40px 96px; }
+  @media (max-width: 900px) { .shell { grid-template-columns: minmax(0, 1fr); gap: 0; padding-block: 24px 64px; } .rail { display: none; } }
+
+  /* Contents rail */
+  .rail { position: sticky; top: 24px; align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; font-size: 14px; }
+  .rail .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; text-decoration: none; color: var(--ink); font-weight: 600; }
+  .rail .brand img { width: 28px; height: 28px; }
+  .rail p { margin: 0 0 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-fade); }
+  .rail ol { list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 2px; }
+  .rail a { display: block; padding: 5px 10px; border-radius: 6px; color: var(--ink-dim); text-decoration: none; }
+  .rail a:hover { background: var(--surface); color: var(--ink); }
+
+  /* Reading column */
+  main { min-width: 0; }
+  .prose { max-width: 70ch; }
+  h1, h2 { font-family: var(--display); font-weight: 400; letter-spacing: -0.01em; text-wrap: balance; color: var(--ink); }
+  h1 { font-size: clamp(44px, 7vw, 68px); line-height: 1; margin: 0; }
+  h2 { font-size: clamp(30px, 4.4vw, 40px); line-height: 1.1; margin: 0 0 12px; }
+  h3 { font-size: 17px; font-weight: 600; margin: 28px 0 8px; text-wrap: balance; }
+  p { margin: 0 0 14px; }
+  ul, ol { margin: 0 0 16px; padding-left: 22px; }
+  li { margin-bottom: 6px; }
+  li::marker { color: var(--ink-fade); }
+  strong { font-weight: 600; }
+  section { padding-top: 64px; }
+  section + section { border-top: 1px solid var(--line); margin-top: 64px; }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+
+  kbd {
+    font-family: var(--mono); font-size: 0.82em; padding: 2px 6px; border-radius: 5px; white-space: nowrap;
+    background: var(--card); color: var(--ink); border: 1px solid var(--line); border-bottom-width: 2px;
+  }
+  code { font-family: var(--mono); font-size: 0.88em; padding: 1px 5px; border-radius: 4px; background: var(--surface); }
+
+  /* Hero */
+  .hero { display: grid; gap: 28px; padding-top: 8px; }
+  .hero-top { display: flex; align-items: center; gap: 18px; }
+  .hero-top img { width: 72px; height: 72px; flex-shrink: 0; }
+  .lede { font-size: 19px; color: var(--ink-dim); max-width: 60ch; margin: 0; }
+  .facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .facts li { margin: 0; padding: 6px 12px; border-radius: 999px; background: var(--surface); font-size: 13.5px; color: var(--ink-dim); }
+  .facts li strong { color: var(--ink); }
+
+  /* Figures */
+  figure { margin: 24px 0 8px; }
+  figure img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--card); }
+  figcaption { margin-top: 10px; font-size: 13.5px; color: var(--ink-fade); max-width: 70ch; }
+  .fig-split { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 40px; align-items: start; }
+  .fig-split figure { margin-top: 0; }
+  @media (max-width: 760px) { .fig-split { grid-template-columns: minmax(0, 1fr); } .fig-split figure { max-width: 320px; } }
+
+  /* Install steps: a real sequence, so numbered */
+  .steps { counter-reset: step; list-style: none; padding: 0; display: grid; gap: 12px; }
+  .steps li { counter-increment: step; position: relative; padding: 14px 16px 14px 56px; margin: 0; background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 16px; top: 13px; width: 26px; height: 26px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 13px; font-weight: 600; background: var(--navy); color: var(--bg);
+  }
+
+  .note { display: flex; gap: 12px; padding: 14px 16px; border-radius: 10px; background: var(--accent-soft); margin: 18px 0; font-size: 15px; }
+  .note.warn { background: var(--warn-soft); color: var(--warn-ink); }
+  .note b { flex-shrink: 0; }
+  .note p { margin: 0; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 16px 0 20px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-fade); background: var(--surface); }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { white-space: nowrap; }
+
+  /* FAQ */
+  details { border: 1px solid var(--line); border-radius: 10px; background: var(--card); margin-bottom: 10px; }
+  summary { cursor: pointer; padding: 14px 16px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; color: var(--ink-fade); font-weight: 400; font-size: 20px; line-height: 1; }
+  details[open] summary::after { content: "–"; }
+  details > div { padding: 0 16px 6px; color: var(--ink-dim); }
+
+  .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  @media (max-width: 760px) { .two-col { grid-template-columns: minmax(0, 1fr); } }
+  .two-col figure { margin-top: 12px; }
+
+  footer { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--ink-fade); }
+</style>
+
+<div class="shell">
+  <nav class="rail" aria-label="Contents">
+    <a class="brand" href="#top"><img src="icon.png" alt="">Bookmark Organizer</a>
+    <p>Get started</p>
+    <ol>
+      <li><a href="#install">Install</a></li>
+      <li><a href="#save">Save a page</a></li>
+      <li><a href="#library">Your library</a></li>
+    </ol>
+    <p>Organize</p>
+    <ol>
+      <li><a href="#folders">Folders</a></li>
+      <li><a href="#search">Search &amp; tags</a></li>
+      <li><a href="#edit">Edit a bookmark</a></li>
+      <li><a href="#bulk">Change many at once</a></li>
+    </ol>
+    <p>Keep it tidy</p>
+    <ol>
+      <li><a href="#broken">Broken links</a></li>
+      <li><a href="#duplicates">Duplicates &amp; insights</a></li>
+      <li><a href="#more">Reminders, tabs &amp; backup</a></li>
+    </ol>
+    <p>Reference</p>
+    <ol>
+      <li><a href="#shortcuts">Keyboard shortcuts</a></li>
+      <li><a href="#privacy">Privacy &amp; permissions</a></li>
+      <li><a href="#faq">Troubleshooting</a></li>
+    </ol>
+  </nav>
+
+  <main id="top">
+    <header class="hero">
+      <div class="hero-top">
+        <img src="icon.png" alt="Bookmark Organizer icon">
+        <div>
+          <div class="eyebrow">User guide · version 2.1</div>
+          <h1>Bookmark Organizer</h1>
+        </div>
+      </div>
+      <p class="lede">Save any page in one keystroke, then find it again later. Bookmark Organizer adds tags, notes, reminders and a clean full-page library on top of Chrome's own bookmarks, and helps you clear out dead and duplicate links.</p>
+      <ul class="facts">
+        <li>Save: <strong><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd></strong></li>
+        <li><strong>Works with</strong> your existing Chrome bookmarks</li>
+        <li><strong>No account</strong>, everything stays in your browser</li>
+        <li><strong>Light &amp; dark</strong> themes</li>
+      </ul>
+      <figure>
+        <img src="screenshots/library-grid.jpg" alt="The library page showing pinned bookmarks, folders in the sidebar and tags" width="2560" height="1600">
+        <figcaption>The library: pinned bookmarks on top, your Chrome folders on the left, and tags underneath.</figcaption>
+      </figure>
+    </header>
+
+    <section id="install" class="prose">
+      <div class="eyebrow">Get started</div>
+      <h2>Install the extension</h2>
+      <p>Bookmark Organizer is installed from its folder, the same way developers load extensions in Chrome. It takes about a minute.</p>
+      <ol class="steps">
+        <li>Download or copy the <strong>Bookmark Organizer</strong> folder to your computer and unzip it if needed. Keep it somewhere permanent, because Chrome loads the extension from that folder.</li>
+        <li>Open <code>chrome://extensions</code> in the address bar.</li>
+        <li>Turn on <strong>Developer mode</strong> with the switch in the top-right corner.</li>
+        <li>Click <strong>Load unpacked</strong> and choose the folder that contains <code>manifest.json</code>.</li>
+        <li>Click the puzzle-piece icon in Chrome's toolbar and pin <strong>Bookmark Organizer</strong> so its icon is always visible.</li>
+        <li>Refresh any tabs that were already open, so the <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> shortcut works on them too.</li>
+      </ol>
+      <div class="note"><b>Tip</b><p>Your existing Chrome bookmarks show up right away. Nothing is imported or copied: the extension works directly with Chrome's bookmarks, so they keep syncing to your other devices as usual.</p></div>
+      <h3>Updating to a new version</h3>
+      <p>Replace the files in the folder, then click the circular reload arrow on the extension's card in <code>chrome://extensions</code>.</p>
+    </section>
+
+    <section id="save">
+      <div class="prose">
+        <div class="eyebrow">Get started</div>
+        <h2>Save a page</h2>
+      </div>
+      <div class="fig-split">
+        <div class="prose">
+          <p>Click the toolbar icon or press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> (<kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> on Mac). The page is saved immediately, just like Chrome's star, and a small panel opens so you can file it.</p>
+          <ul>
+            <li><strong>Name</strong> starts as the page title. Shorten it if you like.</li>
+            <li><strong>Folder</strong> remembers where you saved last, and your recent folders are listed first. Use the folder button next to it to create a new folder without leaving the panel.</li>
+            <li><strong>Tags</strong>: type a tag and press <kbd>Enter</kbd> or a comma. Tags you've used before are suggested as you type. For well-known sites, suggestions such as <code>+ dev</code> appear below. Click one to add it.</li>
+            <li><strong>Note</strong>: a line about why you saved it. Notes are searchable.</li>
+            <li><strong>Pin</strong> keeps it at the top of your library. <strong>Remind</strong> sends a notification later (see <a href="#more">reminders</a>).</li>
+          </ul>
+          <p>Every change saves as you make it; the panel shows <em>Saved</em> when it does. Press <strong>Done</strong> or <kbd>Enter</kbd> to close, or <strong>Remove</strong> if you didn't mean to save. Opening the panel on a page you've already saved switches it to <em>Edit bookmark</em>.</p>
+          <h3>Other ways to save</h3>
+          <ul>
+            <li><strong>Right-click a link</strong> and choose <em>Save link to Library</em> to save it without opening it. A green check on the toolbar icon confirms it.</li>
+            <li><strong>Right-click a page</strong> and choose <em>Save page to Library</em>.</li>
+            <li><strong>Drag a link</strong> from any page or the address bar onto a folder in the library.</li>
+            <li>Chrome's own star and <kbd>Ctrl</kbd>+<kbd>D</kbd> still work. Those bookmarks appear in the library too.</li>
+          </ul>
+        </div>
+        <figure>
+          <img src="screenshots/popup-save.jpg" alt="The save panel with name, folder, tags, note, pin and reminder fields" width="720" height="1222">
+          <figcaption>The save panel opens right after the page is saved.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="library" class="prose">
+      <div class="eyebrow">Get started</div>
+      <h2>Open your library</h2>
+      <p>Open the library from the grid button at the top of the save panel, or right-click the toolbar icon and choose <strong>Open Library</strong>. It opens in its own tab and doesn't replace Chrome's New Tab page.</p>
+      <ul>
+        <li><strong>Grid or list.</strong> The two buttons next to the search box switch views. Grid shows page previews; list fits more on screen.</li>
+        <li><strong>Sort</strong> by folder order, newest, oldest, name or website.</li>
+        <li><strong>Open a bookmark</strong> by clicking it. <kbd>Ctrl</kbd>+click or middle-click opens it in a new tab, the same as any link.</li>
+        <li><strong>Hover a card</strong> to pin it, copy its link, edit it or delete it.</li>
+        <li><strong>The sidebar</strong> also has <em>Recently added</em> (grouped by today, this week and so on), <em>Pinned</em> and <em>Untagged</em>.</li>
+      </ul>
+      <p>The library updates by itself. If you save something from the toolbar while the library is open in another tab, it appears there straight away.</p>
+    </section>
+
+    <section id="folders">
+      <div class="prose">
+        <div class="eyebrow">Organize</div>
+        <h2>Work with folders</h2>
+        <p>The sidebar shows the same folders as Chrome's bookmarks bar and bookmark manager.</p>
+        <ul>
+          <li><strong>Click a folder</strong> to open it. Click it again to fold or unfold its subfolders, or use the small arrow.</li>
+          <li><strong>Inside a folder</strong>, the path at the top takes you back up. Subfolders appear as tiles above the bookmarks.</li>
+          <li><strong>Add things</strong> with <em>+ Bookmark</em> and <em>+ Folder</em> at the top right. The <strong>⋯</strong> menu holds <em>Open all in new tabs</em>, <em>Copy all links</em>, <em>Export this folder</em>, <em>Sort A–Z permanently</em>, <em>Rename</em> and <em>Delete folder</em>.</li>
+          <li><strong>Move things</strong> by dragging bookmarks or folders onto a folder in the sidebar, a folder tile or a step in the path.</li>
+          <li><strong>Use the keyboard</strong> in the folder list: arrow keys move and unfold, <kbd>Enter</kbd> opens.</li>
+        </ul>
+      </div>
+      <figure>
+        <img src="screenshots/folder-view.jpg" alt="The Dev folder open, with breadcrumb, a JavaScript subfolder tile and four bookmarks" width="2560" height="1600">
+        <figcaption>Inside the <em>Dev</em> folder: path at the top, a subfolder tile, then the folder's bookmarks.</figcaption>
+      </figure>
+    </section>
+
+    <section id="search">
+      <div class="prose">
+        <div class="eyebrow">Organize</div>
+        <h2>Search and tags</h2>
+        <p>Press <kbd>/</kbd> anywhere in the library to jump to the search box. Search looks through names, web addresses, tags and notes, and lists matching folders above the matching bookmarks.</p>
+        <ul>
+          <li>Type several words to narrow results. Every word has to match.</li>
+          <li>Start a word with <code>#</code> to match a tag, for example <code>#dev docs</code>.</li>
+          <li>Press <kbd>Esc</kbd> to clear the search.</li>
+        </ul>
+        <p>Click any tag, in the sidebar or on a card, to see everything with that tag. From a tag's page you can <strong>Rename tag</strong> or <strong>Remove tag</strong> across all bookmarks at once.</p>
+      </div>
+      <figure>
+        <img src="screenshots/search.jpg" alt="Search results for #dev docs" width="2560" height="1600">
+        <figcaption>Searching <code>#dev docs</code> finds bookmarks tagged <em>dev</em> that mention “docs”.</figcaption>
+      </figure>
+    </section>
+
+    <section id="edit">
+      <div class="prose">
+        <div class="eyebrow">Organize</div>
+        <h2>Edit a bookmark</h2>
+        <p>Hover a bookmark and click the pencil to change its name, web address, folder, tags or notes, or to pin it. To add a bookmark by hand, click <strong>+ Add</strong> or press <kbd>N</kbd>. Paste a web address and the page title fills in by itself. If the link is already saved, the dialog tells you which folder it's in.</p>
+      </div>
+      <figure>
+        <img src="screenshots/edit-dialog.jpg" alt="The edit dialog for the Paul Graham essays bookmark" width="2560" height="1600">
+        <figcaption>The edit dialog. Press <kbd>Esc</kbd> or click outside it to close without saving.</figcaption>
+      </figure>
+      <div class="note prose"><b>Undo</b><p>Deleting a bookmark or a folder shows an <strong>Undo</strong> button for a few seconds. It restores everything, including tags and notes and the contents of deleted folders.</p></div>
+    </section>
+
+    <section id="bulk">
+      <div class="prose">
+        <div class="eyebrow">Organize</div>
+        <h2>Change many bookmarks at once</h2>
+        <p>Hover a bookmark and tick the box in its corner. Once one is selected, clicking other bookmarks adds them to the selection. <kbd>Ctrl</kbd>+<kbd>A</kbd> selects everything in the current view.</p>
+        <p>A bar appears at the bottom with <strong>Move to</strong>, <strong>Add tag</strong>, <strong>Pin</strong>, <strong>Open</strong> and <strong>Delete</strong>. You can also drag the whole selection onto a folder. Press <kbd>Esc</kbd> to clear the selection.</p>
+      </div>
+      <figure>
+        <img src="screenshots/list-dark-bulk.jpg" alt="List view in dark mode with three bookmarks selected and the action bar at the bottom" width="2560" height="1600">
+        <figcaption>List view in dark mode with three bookmarks selected. A quick way to tag a batch from <em>Untagged</em>.</figcaption>
+      </figure>
+    </section>
+
+    <section id="broken">
+      <div class="prose">
+        <div class="eyebrow">Keep it tidy</div>
+        <h2>Find broken links</h2>
+        <p>Open <strong>Broken links</strong> and click <strong>Check links</strong>. The extension visits each saved page in the background, a few at a time, and you can keep using the library while it runs. A link is only listed when the page is confirmed missing (a “404” or “410” answer) or the website can't be reached at all, after a retry.</p>
+        <p>Each broken link offers three options:</p>
+        <ul>
+          <li><strong>Not broken</strong>: you know it works, so it won't be flagged again.</li>
+          <li><strong>Check again</strong>: re-test only that link.</li>
+          <li><strong>Archived copy</strong>: open the page's history on the Internet Archive's Wayback Machine.</li>
+        </ul>
+        <p><strong>Delete all</strong> removes every listed link, and you can undo it.</p>
+      </div>
+      <figure>
+        <img src="screenshots/broken-links.jpg" alt="Broken links view listing one missing page" width="2560" height="1600">
+        <figcaption>After a check: one missing page is listed, and three links on sign-in sites were skipped.</figcaption>
+      </figure>
+      <div class="note warn prose"><b>Sign-in sites</b><p>Figma, Google Docs, GitHub, Notion and similar apps answer “not found” to anyone they can't confirm is allowed to see a file. Links on these sites are never marked broken. The page tells you how many were skipped.</p></div>
+    </section>
+
+    <section id="duplicates">
+      <div class="prose">
+        <div class="eyebrow">Keep it tidy</div>
+        <h2>Duplicates and insights</h2>
+        <p><strong>Duplicates</strong> groups bookmarks that point to the same page, even when one has a trailing slash or a <code>#section</code> on the end. Each copy shows its folder. The oldest copy is marked <em>Keep</em>; remove the others one by one or all at once with <strong>Remove extra copies</strong>.</p>
+        <p><strong>Insights</strong> gives an overview: how many bookmarks, folders and tags you have, which websites you save most, all your tags, and the oldest bookmarks that still have no tags or notes. Click a number to jump to that list.</p>
+      </div>
+      <div class="two-col">
+        <figure>
+          <img src="screenshots/duplicates.jpg" alt="Duplicates view with two groups" width="2560" height="1600">
+          <figcaption>Duplicate links, grouped. The oldest copy is kept.</figcaption>
+        </figure>
+        <figure>
+          <img src="screenshots/insights.jpg" alt="Insights view with totals, top websites and tags" width="2560" height="1600">
+          <figcaption>Insights: totals, top websites and tags.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="more" class="prose">
+      <div class="eyebrow">Keep it tidy</div>
+      <h2>Reminders, tabs and backups</h2>
+      <h3>Read-later reminders</h3>
+      <p>In the save panel, choose <em>Remind in 1 hour</em>, <em>tonight</em>, <em>tomorrow</em> or <em>next week</em>. Chrome shows a notification at that time; click it to open the page. Chrome must be running for the reminder to appear.</p>
+      <h3>Save all open tabs</h3>
+      <p>Use <strong>Save all tabs</strong> at the bottom of the save panel, or <strong>Save tabs</strong> in the library. Every web page open in the window goes into a new dated folder. In the library you can name the folder, and it's created inside the folder you're viewing.</p>
+      <h3>Export a backup</h3>
+      <p><strong>Export backup</strong> at the bottom of the sidebar downloads all your bookmarks as an HTML file that Chrome, Firefox, Safari and Edge can all import. Tags and notes are included. To export a single folder, open it and use <strong>⋯ → Export this folder</strong>.</p>
+      <h3>Light and dark</h3>
+      <p>The library follows your system setting. The sun and moon button at the bottom of the sidebar switches between light and dark.</p>
+    </section>
+
+    <section id="shortcuts" class="prose">
+      <div class="eyebrow">Reference</div>
+      <h2>Keyboard shortcuts</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Keys</th><th>Where</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd></td><td>Any web page</td><td>Save the page and open the save panel (<kbd>⌘</kbd> on Mac)</td></tr>
+            <tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd></td><td>Anywhere in Chrome</td><td>Same as above, also on <code>chrome://</code> pages and PDFs</td></tr>
+            <tr><td><kbd>Enter</kbd></td><td>Save panel</td><td>Done</td></tr>
+            <tr><td><kbd>/</kbd></td><td>Library</td><td>Jump to search</td></tr>
+            <tr><td><kbd>N</kbd></td><td>Library</td><td>Add a bookmark</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd></td><td>Library</td><td>Select every bookmark in the view</td></tr>
+            <tr><td><kbd>Delete</kbd></td><td>Library, with a selection</td><td>Delete the selected bookmarks (undo available)</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>Library</td><td>Clear search or selection, close dialogs</td></tr>
+            <tr><td><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></td><td>Folder list</td><td>Move, fold and unfold folders; <kbd>Enter</kbd> opens</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>To change the <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> shortcut, open <code>chrome://extensions/shortcuts</code>.</p>
+    </section>
+
+    <section id="privacy" class="prose">
+      <div class="eyebrow">Reference</div>
+      <h2>Privacy and permissions</h2>
+      <p>There is no account and no server. Bookmarks stay in Chrome's own bookmark store; tags, notes, pins and check results are kept in the extension's local storage on your computer. Nothing is sent anywhere, except that page previews and link checks load the saved pages directly from your browser, the same as visiting them.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Permission</th><th>Used for</th></tr></thead>
+          <tbody>
+            <tr><td>Bookmarks</td><td>Reading, saving, moving and deleting your bookmarks</td></tr>
+            <tr><td>Storage</td><td>Tags, notes, pins, settings and link-check results</td></tr>
+            <tr><td>Tabs</td><td>Knowing which page to save, and <em>Save all tabs</em></td></tr>
+            <tr><td>Favicon</td><td>Showing site icons from Chrome's own cache</td></tr>
+            <tr><td>Context menus</td><td>The right-click <em>Save to Library</em> items</td></tr>
+            <tr><td>Alarms, Notifications</td><td>Read-later reminders</td></tr>
+            <tr><td>Access to websites</td><td>Page previews, link checks, and the <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> shortcut on web pages</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="faq" class="prose">
+      <div class="eyebrow">Reference</div>
+      <h2>Troubleshooting</h2>
+      <details>
+        <summary>Ctrl+Shift+D does nothing</summary>
+        <div>
+          <p>Refresh the tab. Pages that were open before the extension was installed or updated don't have the shortcut yet. On <code>chrome://</code> pages, the Chrome Web Store and PDFs, Chrome doesn't allow it at all; use <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> or the toolbar icon there.</p>
+        </div>
+      </details>
+      <details>
+        <summary>A link I can open is listed as broken</summary>
+        <div><p>Click <strong>Check again</strong> on it. Websites sometimes fail for a moment. If it's still listed, click <strong>Not broken</strong> and it won't be flagged again.</p></div>
+      </details>
+      <details>
+        <summary>My Figma or Google Docs links aren't checked</summary>
+        <div><p>That's intentional. These apps hide files from anyone who isn't signed in, so a check from outside the app can't tell a private file from a deleted one. They're skipped instead of being reported broken.</p></div>
+      </details>
+      <details>
+        <summary>Page previews are missing for some bookmarks</summary>
+        <div><p>Previews come from the image a website provides for sharing. Sites without one, and sites that block automated visits, show a colored card with the site's icon instead. Previews are refreshed once a week.</p></div>
+      </details>
+      <details>
+        <summary>Will this change my bookmarks on other devices?</summary>
+        <div><p>Yes. Adding, moving, renaming and deleting bookmarks or folders changes Chrome's real bookmarks, which sync as usual if Chrome sync is on. Tags, notes and pins are stored only on this computer and don't sync.</p></div>
+      </details>
+      <details>
+        <summary>How do I uninstall it?</summary>
+        <div><p>Remove it from <code>chrome://extensions</code>. Your Chrome bookmarks stay exactly where they are; only tags, notes and pins are deleted. Export a backup first if you want to keep them.</p></div>
+      </details>
+    </section>
+
+    <footer>Bookmark Organizer 2.1 · Chrome extension (Manifest V3) · Screenshots show a sample library.</footer>
+  </main>
+</div>

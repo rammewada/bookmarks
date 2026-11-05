@@ -1,17 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Bookmark Organizer",
-  "version": "2.0.0",
-  "description": "Premium bookmark organizer with tags, notes, search commands, and link health tracking.",
+  "version": "2.1.1",
+  "description": "A fast, native-feeling bookmark library with one-click saving, tags, notes, reminders and link health checks.",
   "permissions": [
     "bookmarks",
     "storage",
     "tabs",
     "favicon",
-    "sessions",
-    "history",
     "contextMenus",
-    "scripting",
     "alarms",
     "notifications"
   ],
@@ -19,7 +16,8 @@
     "<all_urls>"
   ],
   "action": {
-    "default_title": "Save Bookmark",
+    "default_title": "Save bookmark",
+    "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
@@ -27,6 +25,22 @@
       "128": "icons/icon128.png"
     }
   },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+D",
+        "mac": "Alt+Shift+D"
+      },
+      "description": "Save the current page"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*", "file:///*"],
+      "js": ["shortcut.js"],
+      "run_at": "document_start"
+    }
+  ],
   "background": {
     "service_worker": "background.js"
   },
@@ -35,18 +49,5 @@
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  },
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "newtab.html",
-        "bookmark-overlay.js",
-        "bookmark-overlay.css",
-        "icons/*"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
-    }
-  ]
+  }
 }
