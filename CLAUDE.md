@@ -8,7 +8,7 @@ A Chrome extension (Manifest V3) that transforms browser bookmarks into a full-f
 ```
 manifest.json      — Extension config (v2.1.0, MV3); toolbar popup (Alt+Shift+D command)
 lib.js             — Shared helpers (storage, tags, URL utils, page-meta fetch, link check, tag-chip input).
-                     Loaded by popup/newtab via <script> and by background.js via importScripts().
+                     Loaded by popup/newtab via <script> and by background.js via importScripts(). 
 shared.css         — Design tokens (light/dark) + shared components (fields, buttons, tag input)
 shortcut.js        — Content script: Ctrl/Cmd+Shift+D on web pages opens the save popup (Chrome reserves that key, so it can't be a command)
 background.js      — Service worker: context menus (save page/link), reminders, meta cleanup on delete
